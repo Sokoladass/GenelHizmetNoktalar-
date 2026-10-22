@@ -25,11 +25,7 @@
     .cat-badge { font-size:0.75rem; background:#e2e8f0; color:#475569; padding:2px 7px; border-radius:10px; font-weight:600; }
     #map { flex:1; height:100%; }
     .custom-marker { width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.4); }
-    @media(max-width:768px){
-      #app { flex-direction:column; }
-      #sidebar { width:100%; height:45%; }
-      #map { height:55%; }
-    }
+    @media(max-width:768px){ #app { flex-direction:column; } #sidebar { width:100%; height:45%; } #map { height:55%; } }
   </style>
 </head>
 <body>
@@ -49,7 +45,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Tamamen ücretsiz ve API anahtarsız OpenStreetMap katmanı
+    // Tamamen ücretsiz ve API anahtarı istemeyen standart OpenStreetMap katmanı
     const map = L.map('map').setView([41.095, 28.765], 12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -71,12 +67,81 @@
       "Eğitim Noktaları": "#64748B", "Camiler": "#D97706"
     };
 
-    // Tüm noktalar gömülü liste olarak tanımlandı
     let allPoints = [];
     let disabledCategories = new Set();
     let activeMarkers = [];
 
-    // Dosyayı indirip güncel kodu içeri aktarmak için index.html dosyasını kullanabilirsiniz
+    // locations.json dosyasını çek
+    fetch('locations.json')
+      .then(res => res.json())
+      .then(data => {
+        allPoints = data;
+        buildSidebar();
+        renderMarkers();
+      })
+      .catch(err => console.error("Veri okuma hatası:", err));
+
+    function renderMarkers() {
+      activeMarkers.forEach(m => map.removeLayer(m));
+      activeMarkers = [];
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+      allPoints.forEach(p => {
+        if (disabledCategories.has(p.cat)) return;
+        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
+
+        const color = categoryColors[p.cat] || "#475569";
+        const icon = L.divIcon({
+          className: 'custom-icon',
+          html: `<div class="custom-marker" style="background:${color};"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        const m = L.marker([p.lat, p.lng], { icon })
+          .bindPopup(`
+            <div style="font-size:13px; min-width:180px;">
+              <strong style="color:#0f172a; font-size:14px;">${p.name}</strong><br>
+              <span style="color:#64748b; font-size:12px;">${p.cat}</span><br>
+              <div style="margin-top:4px; color:#334155;">📍 ${p.mah}</div>
+              <div style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:12px;">Google Haritalar'da Aç ↗</a>
+              </div>
+            </div>
+          `);
+        m.addTo(map);
+        activeMarkers.push(m);
+      });
+    }
+
+    function buildSidebar() {
+      const counts = {};
+      allPoints.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
+      const container = document.getElementById('category-list');
+      container.innerHTML = '';
+
+      Object.keys(counts).sort().forEach(cat => {
+        const col = categoryColors[cat] || "#475569";
+        const div = document.createElement('div');
+        div.className = 'cat-item' + (disabledCategories.has(cat) ? ' inactive' : '');
+        div.innerHTML = `
+          <div class="cat-name">
+            <span class="cat-dot" style="background:${col};"></span>
+            <span>${cat}</span>
+          </div>
+          <span class="cat-badge">${counts[cat]}</span>
+        `;
+        div.onclick = () => {
+          if (disabledCategories.has(cat)) disabledCategories.delete(cat);
+          else disabledCategories.add(cat);
+          buildSidebar();
+          renderMarkers();
+        };
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('search-input').addEventListener('input', renderMarkers);
   </script>
 </body>
 </html>
