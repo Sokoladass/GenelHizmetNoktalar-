@@ -9,27 +9,29 @@
     * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body, html { width:100%; height:100%; overflow:hidden; }
     #app { display:flex; width:100vw; height:100vh; }
-    #sidebar { width:360px; height:100%; background:#fff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; z-index:1000; box-shadow:2px 0 8px rgba(0,0,0,0.06); }
-    #sidebar-header { padding:16px; background:#0f172a; color:#fff; }
-    #sidebar-header h1 { font-size:1.15rem; font-weight:700; margin-bottom:4px; }
-    #sidebar-header p { font-size:0.8rem; color:#94a3b8; }
-    #search-box { padding:12px 16px; border-bottom:1px solid #f1f5f9; }
-    #search-input { width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; outline:none; }
+    #sidebar { width:370px; height:100%; background:#fff; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; z-index:1000; box-shadow:2px 0 8px rgba(0,0,0,0.06); }
+    #sidebar-header { padding:14px 16px; background:#0f172a; color:#fff; }
+    #sidebar-header h1 { font-size:1.1rem; font-weight:700; margin-bottom:2px; }
+    #sidebar-header p { font-size:0.75rem; color:#94a3b8; }
+    #tools-box { padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; gap:8px; }
+    .btn-tool { flex:1; padding:7px 10px; font-size:0.75rem; font-weight:600; border-radius:6px; cursor:pointer; border:1px solid #cbd5e1; background:#fff; color:#334155; transition:0.2s; }
+    .btn-tool:hover { background:#f1f5f9; }
+    .btn-tool.active { background:#ef4444; color:#fff; border-color:#dc2626; }
+    .btn-download { background:#2563eb; color:#fff; border-color:#1d4ed8; }
+    .btn-download:hover { background:#1d4ed8; }
+    #search-box { padding:10px 14px; border-bottom:1px solid #f1f5f9; }
+    #search-input { width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; outline:none; }
     #search-input:focus { border-color:#2563eb; }
     #category-list { flex:1; overflow-y:auto; padding:10px 14px; }
-    .cat-item { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; cursor:pointer; margin-bottom:4px; transition:0.15s; font-size:0.85rem; user-select:none; }
+    .cat-item { display:flex; align-items:center; justify-content:space-between; padding:7px 9px; border-radius:6px; cursor:pointer; margin-bottom:3px; transition:0.15s; font-size:0.82rem; user-select:none; }
     .cat-item:hover { background:#f1f5f9; }
     .cat-item.inactive { opacity:0.35; }
     .cat-name { display:flex; align-items:center; gap:8px; font-weight:500; color:#1e293b; }
-    .cat-dot { width:12px; height:12px; border-radius:50%; display:inline-block; flex-shrink:0; }
-    .cat-badge { font-size:0.75rem; background:#e2e8f0; color:#475569; padding:2px 7px; border-radius:10px; font-weight:600; }
+    .cat-dot { width:11px; height:11px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .cat-badge { font-size:0.72rem; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:10px; font-weight:600; }
     #map { flex:1; height:100%; }
     .custom-marker { width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.4); }
-    @media(max-width:768px){
-      #app { flex-direction:column; }
-      #sidebar { width:100%; height:45%; }
-      #map { height:55%; }
-    }
+    @media(max-width:768px){ #app { flex-direction:column; } #sidebar { width:100%; height:45%; } #map { height:55%; } }
   </style>
 </head>
 <body>
@@ -38,6 +40,10 @@
       <div id="sidebar-header">
         <h1>Başakşehir Hizmet Haritası</h1>
         <p>25 Kategori • 289 Tesis ve Kurum</p>
+      </div>
+      <div id="tools-box">
+        <button id="toggle-edit" class="btn-tool" onclick="toggleEditMode()">✏️ Düzenleme Modu: Kapalı</button>
+        <button class="btn-tool btn-download" onclick="downloadLocations()">💾 Güncel JSON İndir</button>
       </div>
       <div id="search-box">
         <input type="text" id="search-input" placeholder="Kurum, okul, cami veya mahalle ara...">
@@ -55,6 +61,35 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
+    // Başakşehir İlçe Sınırı Göstergeleri (Sarı Kesikli Çizgiler)
+    const mainBorderCoords = [
+      [41.165, 28.730], [41.155, 28.745], [41.140, 28.765], [41.130, 28.780],
+      [41.125, 28.810], [41.115, 28.818], [41.085, 28.812], [41.065, 28.805],
+      [41.060, 28.790], [41.050, 28.760], [41.053, 28.746], [41.045, 28.725],
+      [41.050, 28.715], [41.070, 28.725], [41.090, 28.720], [41.120, 28.710],
+      [41.150, 28.710], [41.165, 28.730]
+    ];
+    const bahcesehirBorderCoords = [
+      [41.085, 28.640], [41.085, 28.690], [41.075, 28.705], [41.055, 28.705],
+      [41.045, 28.685], [41.048, 28.660], [41.070, 28.635], [41.085, 28.640]
+    ];
+    
+    L.polygon(mainBorderCoords, {
+      color: '#eab308',
+      weight: 3,
+      dashArray: '6, 6',
+      fillColor: '#fef08a',
+      fillOpacity: 0.05
+    }).addTo(map).bindTooltip("Başakşehir Merkez Sınırı");
+
+    L.polygon(bahcesehirBorderCoords, {
+      color: '#eab308',
+      weight: 3,
+      dashArray: '6, 6',
+      fillColor: '#fef08a',
+      fillOpacity: 0.05
+    }).addTo(map).bindTooltip("Bahçeşehir / Bahçekent Sınırı");
+
     const categoryColors = {
       "Kültür ve Yaşam Merkezleri": "#1E40AF", "Spor Merkezleri": "#EA580C",
       "Alışveriş Alanları": "#7E22CE", "Millet Kütüphaneleri": "#9A3412",
@@ -70,17 +105,322 @@
       "Eğitim Noktaları": "#64748B", "Camiler": "#D97706"
     };
 
-    const allPoints = [{"name": "İbn Haldun Üniversitesi Metro", "cat": "U Metro", "lat": 41.1292, "lng": 28.7471, "mah": "Kayabaşı / Fenertepe"}, {"name": "Kayaşehir Metro", "cat": "U Metro", "lat": 41.1118, "lng": 28.7505, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Kayaşehir Merkez Metro", "cat": "U Metro", "lat": 41.1085, "lng": 28.7465, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Olimpiyatköy Metro", "cat": "U Metro", "lat": 41.082, "lng": 28.769, "mah": "Ziya Gökalp"}, {"name": "Onurkent Metro", "cat": "U Metro", "lat": 41.113, "lng": 28.7885, "mah": "Başakşehir 5. Etap"}, {"name": "Şehir Hastanesi Metro", "cat": "U Metro", "lat": 41.1045, "lng": 28.776, "mah": "Başakşehir / Şehir Hastanesi"}, {"name": "Toplu Konutlar Metro", "cat": "U Metro", "lat": 41.119, "lng": 28.7735, "mah": "Kayabaşı"}, {"name": "Başak Konutları Metro", "cat": "M Metro", "lat": 41.0995, "lng": 28.801, "mah": "Başakşehir"}, {"name": "İkitelli Sanayi Metro", "cat": "M Metro", "lat": 41.0695, "lng": 28.799, "mah": "Ziya Gökalp / İkitelli"}, {"name": "MASKO Metro", "cat": "M Metro", "lat": 41.061, "lng": 28.7985, "mah": "Ziya Gökalp"}, {"name": "Metrokent Metro", "cat": "M Metro", "lat": 41.1192, "lng": 28.8035, "mah": "Başakşehir 5. Etap"}, {"name": "Olimpiyat Metro", "cat": "M Metro", "lat": 41.0772, "lng": 28.7665, "mah": "Ziya Gökalp"}, {"name": "Siteler Metro", "cat": "M Metro", "lat": 41.0825, "lng": 28.802, "mah": "Başakşehir"}, {"name": "Turgut Özal Metro", "cat": "M Metro", "lat": 41.076, "lng": 28.793, "mah": "Başakşehir / İkitelli"}, {"name": "Ziya Gökalp Metro", "cat": "M Metro", "lat": 41.068, "lng": 28.7815, "mah": "Ziya Gökalp"}, {"name": "Başakşehir Çam ve Sakura Şehir Hastanesi", "cat": "Hastaneler", "lat": 41.1045, "lng": 28.7764, "mah": "Başakşehir"}, {"name": "Başakşehir Devlet Hastanesi", "cat": "Hastaneler", "lat": 41.1098, "lng": 28.8005, "mah": "Başak Mahallesi"}, {"name": "Başakşehir Güvercintepe Hatice-Haydar Aslan Semt Polikliniği", "cat": "Hastaneler", "lat": 41.0615, "lng": 28.739, "mah": "Güvercintepe"}, {"name": "Başakşehir Belediyesi Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.1075, "lng": 28.7904, "mah": "Kayabaşı / Temmuz Sokak"}, {"name": "Başakşehir Kaymakamlığı", "cat": "Hizmet Binaları", "lat": 41.1082, "lng": 28.7915, "mah": "Kayabaşı"}, {"name": "Başakşehir İlçe Emniyet Müdürlüğü", "cat": "Polis Merkezleri", "lat": 41.1065, "lng": 28.7925, "mah": "Kayabaşı"}, {"name": "Başakşehir İlçe Milli Eğitim Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.102, "lng": 28.8035, "mah": "Başak Mahallesi"}, {"name": "Başakşehir İlçe Sağlık Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.108, "lng": 28.8015, "mah": "Başak Mahallesi"}, {"name": "Tapu ve Kadastro Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.107, "lng": 28.791, "mah": "Kayabaşı"}, {"name": "Başakşehir Nikah Salonu", "cat": "Hizmet Binaları", "lat": 41.1095, "lng": 28.808, "mah": "Sular Vadisi / Başak"}, {"name": "Bahçeşehir Ek Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.062, "lng": 28.6915, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir Belediyesi Ek Hizmet Binaları", "cat": "Hizmet Binaları", "lat": 41.0965, "lng": 28.804, "mah": "Başak Mahallesi"}, {"name": "Altınşehir Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0255, "lng": 28.7745, "mah": "Altınşehir"}, {"name": "Bahçeşehir 1. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0645, "lng": 28.694, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir 2. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.056, "lng": 28.673, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Başak Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.098, "lng": 28.803, "mah": "Başak Mahallesi"}, {"name": "Güvercintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.063, "lng": 28.741, "mah": "Güvercintepe"}, {"name": "Kayabaşı Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.111, "lng": 28.752, "mah": "Kayabaşı"}, {"name": "Şahintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0515, "lng": 28.724, "mah": "Şahintepe"}, {"name": "Ziya Gökalp Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0675, "lng": 28.783, "mah": "Ziya Gökalp"}, {"name": "Bahçeşehir Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.0635, "lng": 28.692, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Güvercintepe Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.065, "lng": 28.7435, "mah": "Güvercintepe"}, {"name": "Kayaşehir Polis Merkezi", "cat": "Polis Merkezleri", "lat": 41.114, "lng": 28.754, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Şehit Erdem Özçelik Kalekolu", "cat": "Polis Merkezleri", "lat": 41.0505, "lng": 28.728, "mah": "Şahintepe"}, {"name": "Bahçeşehir İtfaiye İstasyonu", "cat": "İtfaiye İstasyonları", "lat": 41.061, "lng": 28.6965, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir İtfaiye Amirliği", "cat": "İtfaiye İstasyonları", "lat": 41.0935, "lng": 28.807, "mah": "Başak Mahallesi / İkitelli"}, {"name": "Atatürk Olimpiyat Stadyumu", "cat": "Stadyumlar", "lat": 41.0744, "lng": 28.7658, "mah": "Ziya Gökalp"}, {"name": "Başakşehir Fatih Terim Stadyumu", "cat": "Stadyumlar", "lat": 41.1159, "lng": 28.8052, "mah": "Başak Mahallesi 4. Etap"}, {"name": "Şehit Erdem Özçelik Stadyumu", "cat": "Stadyumlar", "lat": 41.0535, "lng": 28.7275, "mah": "Şahintepe"}, {"name": "İSKİ Başakşehir Şube Müdürlüğü", "cat": "İSKİ", "lat": 41.1015, "lng": 28.8005, "mah": "Başak Mahallesi"}, {"name": "İGDAŞ Başakşehir Hizmet Binası", "cat": "İGDAŞ", "lat": 41.097, "lng": 28.802, "mah": "Başak Mahallesi"}, {"name": "Başakşehir Elektrik İdaresi (BEDAŞ)", "cat": "BEDAŞ", "lat": 41.0985, "lng": 28.8045, "mah": "Başak Mahallesi"}, {"name": "Başakşehir LIVING LAB", "cat": "Living Lab", "lat": 41.118, "lng": 28.806, "mah": "Başakşehir 5. Etap"}, {"name": "Başakşehir Belediyesi Hayvan Hastanesi", "cat": "Hayvan Hastanesi", "lat": 41.1255, "lng": 28.779, "mah": "Kayabaşı / Şamlar yolu"}, {"name": "İbn Haldun Üniversitesi", "cat": "Üniversiteler", "lat": 41.1345, "lng": 28.7455, "mah": "Başakşehir / Fenertepe"}, {"name": "Başakşehir VR Tema Park", "cat": "VR Tema Park", "lat": 41.109, "lng": 28.8085, "mah": "Sular Vadisi"}, {"name": "Başakşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.111, "lng": 28.788, "mah": "Kayabaşı / Başakşehir"}, {"name": "Bahçeşehir Gölet", "cat": "Yeşil Alanlar", "lat": 41.0665, "lng": 28.698, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Sular Vadisi", "cat": "Yeşil Alanlar", "lat": 41.109, "lng": 28.808, "mah": "Başak Mahallesi 5. Etap"}, {"name": "Çam ve Sakura Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.102, "lng": 28.772, "mah": "Şehir Hastanesi Yanı"}, {"name": "Kayapark Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.115, "lng": 28.743, "mah": "Kayaşehir"}, {"name": "Ayazma Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.085, "lng": 28.775, "mah": "Ziya Gökalp / Ayazma"}, {"name": "Güvercintepe Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.067, "lng": 28.746, "mah": "Güvercintepe"}, {"name": "Altınşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.032, "lng": 28.779, "mah": "Altınşehir"}, {"name": "Boğazköy Parkı", "cat": "Yeşil Alanlar", "lat": 41.077, "lng": 28.685, "mah": "Boğazköy"}, {"name": "4. Etap Yürüyüş Yolu", "cat": "Yeşil Alanlar", "lat": 41.114, "lng": 28.803, "mah": "Başakşehir 4. Etap"}, {"name": "Şamlar Tabiat Parkı 5. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.146, "lng": 28.728, "mah": "Şamlar"}, {"name": "Şamlar Tabiat Parkı 6. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.152, "lng": 28.735, "mah": "Şamlar"}, {"name": "Altınşehir Yarımburgaz Mağaraları", "cat": "Tarihi Alanlar", "lat": 41.0265, "lng": 28.7705, "mah": "Altınşehir"}, {"name": "Baruthane", "cat": "Tarihi Alanlar", "lat": 41.144, "lng": 28.718, "mah": "Şamlar"}, {"name": "Şamlar Bendi", "cat": "Tarihi Alanlar", "lat": 41.149, "lng": 28.711, "mah": "Şamlar"}, {"name": "Bahçeşehir Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.0655, "lng": 28.696, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Çam ve Sakura Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.103, "lng": 28.774, "mah": "Şehir Hastanesi Çevresi"}, {"name": "Kayapark Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.1145, "lng": 28.7445, "mah": "Kayaşehir"}, {"name": "Sular Vadisi Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.1095, "lng": 28.8075, "mah": "Sular Vadisi"}, {"name": "Altınşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.028, "lng": 28.776, "mah": "Altınşehir"}, {"name": "Bahçeşehir BAKMER", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.067, "lng": 28.695, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Hacı Bektaş Veli Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0635, "lng": 28.688, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.066, "lng": 28.6945, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0625, "lng": 28.693, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Muhsin Ertuğrul Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.064, "lng": 28.696, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir Emin Saraç Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0963, "lng": 28.8021, "mah": "Başak Mahallesi"}, {"name": "Cemil Meriç KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.069, "lng": 28.783, "mah": "Ziya Gökalp"}, {"name": "Cevdet Kılıçlar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.06, "lng": 28.7405, "mah": "Güvercintepe"}, {"name": "Fenertepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.135, "lng": 28.752, "mah": "Fenertepe"}, {"name": "Güvercintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.064, "lng": 28.744, "mah": "Güvercintepe"}, {"name": "Necdet Yıldırım KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.052, "lng": 28.726, "mah": "Şahintepe"}, {"name": "Necip Fazıl Kısakürek KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.117, "lng": 28.749, "mah": "Kayaşehir"}, {"name": "Özdemir Bayraktar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.112, "lng": 28.789, "mah": "Başakşehir 5. Etap"}, {"name": "Sezai Karakoç Gençlik Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.114, "lng": 28.751, "mah": "Kayaşehir"}, {"name": "Şahintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0505, "lng": 28.7235, "mah": "Şahintepe"}, {"name": "Şehir Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.108, "lng": 28.7895, "mah": "Kayabaşı / Belediye Meydanı"}, {"name": "Şehit Savcı M. Selim Kiraz KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0835, "lng": 28.801, "mah": "Başakşehir 2. Etap"}, {"name": "Teoman Duralı Bahçekent KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.079, "lng": 28.6465, "mah": "Bahçekent"}, {"name": "Yunus Emre Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.115, "lng": 28.804, "mah": "Başakşehir 4. Etap"}, {"name": "Abdi İbrahim Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0545, "lng": 28.672, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Abdülhamit Han Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1215, "lng": 28.7565, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Ahmet Kabaklı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0965, "lng": 28.8035, "mah": "Başak Mahallesi"}, {"name": "Akif İnan Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0665, "lng": 28.742, "mah": "Güvercintepe"}, {"name": "Akşemsettin Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.118, "lng": 28.748, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Alev Alatlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0775, "lng": 28.648, "mah": "Bahçekent"}, {"name": "Bahçeşehir Atatürk Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.065, "lng": 28.691, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Süleyman Demirel İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.063, "lng": 28.6945, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.092, "lng": 28.8015, "mah": "Başak Mahallesi"}, {"name": "Başakşehir Ayazma İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0845, "lng": 28.776, "mah": "Ziya Gökalp / Ayazma"}, {"name": "Başakşehir Aziz Sancar Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1095, "lng": 28.784, "mah": "Kayabaşı"}, {"name": "Başakşehir Cumhuriyet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.116, "lng": 28.802, "mah": "Başak Mahallesi"}, {"name": "Başakşehir Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.066, "lng": 28.788, "mah": "Ziya Gökalp"}, {"name": "Başakşehir Halk Eğitimi Merkezi", "cat": "Eğitim Noktaları", "lat": 41.0975, "lng": 28.8055, "mah": "Başak Mahallesi"}, {"name": "Başakşehir İTÜ İsmail Dede Efendi Güzel Sanatlar Lisesi", "cat": "Eğitim Noktaları", "lat": 41.114, "lng": 28.761, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Başakşehir Nene Hatun İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.026, "lng": 28.773, "mah": "Altınşehir"}, {"name": "Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.105, "lng": 28.795, "mah": "Başak Mahallesi"}, {"name": "Başakşehir Rasim Özdenören Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.119, "lng": 28.751, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Başakşehir Şehit Orhun Göytan İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.106, "lng": 28.785, "mah": "Kayabaşı"}, {"name": "Baykar Milli Teknoloji Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.073, "lng": 28.772, "mah": "Ziya Gökalp / Olimpiyat Yolu"}, {"name": "Boğazköy Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.076, "lng": 28.683, "mah": "Boğazköy"}, {"name": "Borsa İstanbul Alparslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.095, "lng": 28.802, "mah": "Başak Mahallesi"}, {"name": "Borsa İstanbul Başakşehir Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.065, "lng": 28.791, "mah": "Ziya Gökalp"}, {"name": "Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.027, "lng": 28.778, "mah": "Altınşehir"}, {"name": "Cahit Zarifoğlu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.113, "lng": 28.807, "mah": "Başak Mahallesi"}, {"name": "Emlak Konut Bahçekent Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0795, "lng": 28.644, "mah": "Bahçekent"}, {"name": "Emlak Konut Fuat Sezgin İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0805, "lng": 28.647, "mah": "Bahçekent"}, {"name": "Fatih Sultan Mehmet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.052, "lng": 28.723, "mah": "Şahintepe"}, {"name": "Fenertepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.136, "lng": 28.754, "mah": "Fenertepe"}, {"name": "Güvercintepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.061, "lng": 28.743, "mah": "Güvercintepe"}, {"name": "Güvercintepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.062, "lng": 28.7445, "mah": "Güvercintepe"}, {"name": "Hacı Ali Osman Gül İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.054, "lng": 28.726, "mah": "Şahintepe"}, {"name": "Hacı Fatma Gül Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.055, "lng": 28.727, "mah": "Şahintepe"}, {"name": "Hacı Şöhret Demiröz Fen Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1195, "lng": 28.805, "mah": "Başakşehir 5. Etap"}, {"name": "Hikmet Uluğbay Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.091, "lng": 28.804, "mah": "Başak Mahallesi"}, {"name": "İBB Kanuni Sultan Süleyman Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0645, "lng": 28.738, "mah": "Güvercintepe"}, {"name": "İBB Mehmet Akif Ersoy İlkokul ve Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.109, "lng": 28.762, "mah": "Kayabaşı"}, {"name": "İBB Şehit Savcı Selim Kiraz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0685, "lng": 28.7845, "mah": "Ziya Gökalp"}, {"name": "İBB Yavuz Sultan Selim Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.121, "lng": 28.8045, "mah": "Başakşehir 5. Etap"}, {"name": "İbrahim Koçaslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.049, "lng": 28.7245, "mah": "Şahintepe"}, {"name": "İsmail Kemal Demiröz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1185, "lng": 28.8065, "mah": "Başakşehir 5. Etap"}, {"name": "İsmail Kemal Demiröz Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1188, "lng": 28.806, "mah": "Başakşehir 5. Etap"}, {"name": "İTO Başakşehir Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1155, "lng": 28.756, "mah": "Kayabaşı / Kayaşehir"}, {"name": "İTO Hüma Hatun İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.116, "lng": 28.757, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Kayabaşı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.124, "lng": 28.749, "mah": "Kayabaşı Köy İçi"}, {"name": "Kayaşehir Şeyh Şamil İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.107, "lng": 28.7485, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Mahmut Şevket Zırh İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0675, "lng": 28.744, "mah": "Güvercintepe"}, {"name": "Mehmet Emin Saraç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.096, "lng": 28.8015, "mah": "Başak Mahallesi"}, {"name": "Mehmet Yaren Gümeli İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0285, "lng": 28.775, "mah": "Altınşehir"}, {"name": "Miktat Ağaoğlu Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.071, "lng": 28.789, "mah": "Ziya Gökalp"}, {"name": "Necip Fazıl Kısakürek Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.109, "lng": 28.753, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Nurettin Topçu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1135, "lng": 28.7495, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Oyakkent İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1165, "lng": 28.794, "mah": "Başakşehir / Oyakkent"}, {"name": "Oyakkent Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.117, "lng": 28.795, "mah": "Başakşehir / Oyakkent"}, {"name": "Öğrenciden Armağan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.058, "lng": 28.6715, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Prof. Dr. Ahat Andican Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0565, "lng": 28.676, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Prof. Dr. Necmettin Erbakan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1145, "lng": 28.754, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Selahaddin Eyyubi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.069, "lng": 28.7415, "mah": "Güvercintepe"}, {"name": "Şahintepe İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.051, "lng": 28.725, "mah": "Şahintepe"}, {"name": "Şair Erdem Bayazıt Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.112, "lng": 28.804, "mah": "Başak Mahallesi"}, {"name": "Şamlar İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.141, "lng": 28.724, "mah": "Şamlar"}, {"name": "Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1105, "lng": 28.782, "mah": "Kayabaşı"}, {"name": "Şehit Muhammed Eymen Demirci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.053, "lng": 28.7215, "mah": "Şahintepe"}, {"name": "Şehit Polis Mustafa Erdoğan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0275, "lng": 28.7725, "mah": "Altınşehir"}, {"name": "Şehit Serdar Gökbayrak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.067, "lng": 28.781, "mah": "Ziya Gökalp"}, {"name": "Şehit Vedat Barceğci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.108, "lng": 28.749, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Tepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0475, "lng": 28.7265, "mah": "Şahintepe"}, {"name": "TOKİ Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1098, "lng": 28.7515, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Celalettin Ökten Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1175, "lng": 28.746, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Ertuğrulgazi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.127, "lng": 28.758, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Ertuğrulgazi Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1275, "lng": 28.7585, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Fenertepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1345, "lng": 28.7535, "mah": "Fenertepe"}, {"name": "TOKİ Hayme Ana Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.119, "lng": 28.743, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Kayaşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1121, "lng": 28.7612, "mah": "Kayabaşı / Kayaşehir 6. Bölge"}, {"name": "TOKİ Kayaşehir Mevlana İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1105, "lng": 28.742, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Kayaşehir Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1065, "lng": 28.751, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Mustafa Kutlu İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.116, "lng": 28.7525, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Osmangazi İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.115, "lng": 28.747, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Şehit Abdülselam Özatak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1205, "lng": 28.741, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Turgut Özal İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1085, "lng": 28.7445, "mah": "Kayabaşı / Kayaşehir"}, {"name": "TOKİ Yunus Emre İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.111, "lng": 28.7545, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Altınşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0315, "lng": 28.7785, "mah": "Altınşehir"}, {"name": "Altınşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0265, "lng": 28.7755, "mah": "Altınşehir"}, {"name": "Ayazma Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0835, "lng": 28.774, "mah": "Ziya Gökalp / Ayazma"}, {"name": "Bahçekent Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.078, "lng": 28.647, "mah": "Bahçekent"}, {"name": "Bahçeşehir Spor Merkezi", "cat": "Spor Merkezleri", "lat": 41.064, "lng": 28.6925, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0615, "lng": 28.695, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Tenis Parkı", "cat": "Spor Merkezleri", "lat": 41.0675, "lng": 28.6935, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1115, "lng": 28.7895, "mah": "Kayabaşı"}, {"name": "Başakşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.103, "lng": 28.8025, "mah": "Başak Mahallesi"}, {"name": "Fenertepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1355, "lng": 28.753, "mah": "Fenertepe"}, {"name": "Güvercintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0635, "lng": 28.7425, "mah": "Güvercintepe"}, {"name": "Kayaşehir Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.113, "lng": 28.748, "mah": "Kayaşehir"}, {"name": "Korupark Spor Tesisleri", "cat": "Spor Merkezleri", "lat": 41.0945, "lng": 28.806, "mah": "Başak Mahallesi"}, {"name": "Necip Fazıl Kısakürek Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1175, "lng": 28.7485, "mah": "Kayaşehir"}, {"name": "Özdemir Bayraktar Bilim Kültür ve Yaşam Parkı", "cat": "Spor Merkezleri", "lat": 41.1125, "lng": 28.7885, "mah": "Başakşehir 5. Etap"}, {"name": "Şahintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0525, "lng": 28.7255, "mah": "Şahintepe"}, {"name": "Başakpazar Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.1145, "lng": 28.8015, "mah": "Başakşehir 4. Etap"}, {"name": "Fenertepe Kapalı Pazar Alanı", "cat": "Alışveriş Alanları", "lat": 41.134, "lng": 28.7515, "mah": "Fenertepe"}, {"name": "İGTOT-İstanbul Gıda Toptancılar Çarşısı", "cat": "Alışveriş Alanları", "lat": 41.121, "lng": 28.765, "mah": "Şahintepe / Kayabaşı"}, {"name": "Kayaşehir Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.112, "lng": 28.75, "mah": "Kayaşehir"}, {"name": "Pazartürk Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.0605, "lng": 28.6935, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Bahçeşehir Millet Kütüphanesi", "cat": "Millet Kütüphaneleri", "lat": 41.0668, "lng": 28.6975, "mah": "Bahçeşehir Gölet İçi"}, {"name": "Başakşehir Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.1105, "lng": 28.7875, "mah": "Başakşehir Millet Bahçesi"}, {"name": "Bahçekent Teoman Duralı Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.0788, "lng": 28.6468, "mah": "Bahçekent Hayat Park"}, {"name": "Altınşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.031, "lng": 28.777, "mah": "Altınşehir"}, {"name": "Bahçeşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.061, "lng": 28.691, "mah": "Bahçeşehir"}, {"name": "Başakşehir Millet Bahçesi Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.1118, "lng": 28.7865, "mah": "Millet Bahçesi"}, {"name": "Ağu İçen Cemevi", "cat": "Cemevleri", "lat": 41.053, "lng": 28.724, "mah": "Şahintepe"}, {"name": "Bahçeşehir Canlar Cemevi", "cat": "Cemevleri", "lat": 41.059, "lng": 28.682, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Hacı Bektaş-ı Veli Cemevi", "cat": "Cemevleri", "lat": 41.0625, "lng": 28.7395, "mah": "Güvercintepe"}, {"name": "Karacaören Köyü Velibaba Cemevi", "cat": "Cemevleri", "lat": 41.029, "lng": 28.774, "mah": "Altınşehir / Karacaören"}, {"name": "Abdülhamid Han Camii", "cat": "Camiler", "lat": 41.118, "lng": 28.751, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Akif İnan Camii", "cat": "Camiler", "lat": 41.066, "lng": 28.743, "mah": "Güvercintepe"}, {"name": "Akşemsettin Camii", "cat": "Camiler", "lat": 41.1165, "lng": 28.747, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Alemdar Camii", "cat": "Camiler", "lat": 41.054, "lng": 28.723, "mah": "Şahintepe"}, {"name": "Altınşehir Merkez Camii", "cat": "Camiler", "lat": 41.026, "lng": 28.775, "mah": "Altınşehir"}, {"name": "Aydınlar Camii", "cat": "Camiler", "lat": 41.063, "lng": 28.741, "mah": "Güvercintepe"}, {"name": "Aymakoop Camii", "cat": "Camiler", "lat": 41.071, "lng": 28.798, "mah": "Ziya Gökalp / Sanayi"}, {"name": "Bahçeşehir Ebussuud Efendi Camii", "cat": "Camiler", "lat": 41.058, "lng": 28.684, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Bahçeşehir Hacı Eyüp Saadet Çarmıklı Camii", "cat": "Camiler", "lat": 41.064, "lng": 28.693, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Başakşehir Merkez Camii", "cat": "Camiler", "lat": 41.097, "lng": 28.803, "mah": "Başak Mahallesi 1. Etap"}, {"name": "Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.051, "lng": 28.725, "mah": "Şahintepe"}, {"name": "Boğazköy Merkez Camii", "cat": "Camiler", "lat": 41.0765, "lng": 28.684, "mah": "Boğazköy"}, {"name": "Demirciler Kooperatif Camii", "cat": "Camiler", "lat": 41.068, "lng": 28.802, "mah": "İkitelli Sanayi"}, {"name": "Derviş Ağa Camii", "cat": "Camiler", "lat": 41.028, "lng": 28.773, "mah": "Altınşehir"}, {"name": "Dolapdere Sanayi Sitesi Camii", "cat": "Camiler", "lat": 41.072, "lng": 28.799, "mah": "İkitelli Sanayi"}, {"name": "Elmalılı Hamdi Yazır Camii", "cat": "Camiler", "lat": 41.119, "lng": 28.804, "mah": "Başakşehir 5. Etap"}, {"name": "Emlak Konut Başakşehir Evleri Camii", "cat": "Camiler", "lat": 41.107, "lng": 28.789, "mah": "Kayabaşı"}, {"name": "Emlak Konut Camii", "cat": "Camiler", "lat": 41.079, "lng": 28.646, "mah": "Bahçekent"}, {"name": "Ensar Camii", "cat": "Camiler", "lat": 41.114, "lng": 28.806, "mah": "Başakşehir 4. Etap"}, {"name": "Ertuğrul Gazi Camii", "cat": "Camiler", "lat": 41.1265, "lng": 28.757, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Eski Şamlar Köyü Camii", "cat": "Camiler", "lat": 41.147, "lng": 28.719, "mah": "Eski Şamlar"}, {"name": "Estonşehir Aksa Camii", "cat": "Camiler", "lat": 41.052, "lng": 28.669, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Fetih Camii", "cat": "Camiler", "lat": 41.06, "lng": 28.742, "mah": "Güvercintepe"}, {"name": "Gazi Süleyman Paşa Camii", "cat": "Camiler", "lat": 41.049, "lng": 28.726, "mah": "Şahintepe"}, {"name": "Giyim Sanatkarları Camii", "cat": "Camiler", "lat": 41.066, "lng": 28.796, "mah": "İkitelli Sanayi"}, {"name": "Göçmen Konutları Camii", "cat": "Camiler", "lat": 41.092, "lng": 28.802, "mah": "Başakşehir 2. Etap"}, {"name": "Gülendam Hatun Camii", "cat": "Camiler", "lat": 41.065, "lng": 28.739, "mah": "Güvercintepe"}, {"name": "Güler Kadıoğlu Camii", "cat": "Camiler", "lat": 41.061, "lng": 28.696, "mah": "Bahçeşehir 1. Kısım"}, {"name": "Güvercintepe Eski Merkez Camii", "cat": "Camiler", "lat": 41.062, "lng": 28.7435, "mah": "Güvercintepe"}, {"name": "Güvercintepe Sultan Beyazıt Camii", "cat": "Camiler", "lat": 41.064, "lng": 28.745, "mah": "Güvercintepe"}, {"name": "Hacı Ahmet Camii", "cat": "Camiler", "lat": 41.053, "lng": 28.7245, "mah": "Şahintepe"}, {"name": "Hacı Ahmet Merkez Camii", "cat": "Camiler", "lat": 41.029, "lng": 28.776, "mah": "Altınşehir"}, {"name": "Hacı Kamil Demiröz Camii", "cat": "Camiler", "lat": 41.118, "lng": 28.8055, "mah": "Başakşehir 5. Etap"}, {"name": "Hacı Kasım Camii", "cat": "Camiler", "lat": 41.067, "lng": 28.74, "mah": "Güvercintepe"}, {"name": "Hacı Osman Işıklı Camii", "cat": "Camiler", "lat": 41.05, "lng": 28.727, "mah": "Şahintepe"}, {"name": "Halilurrahman Camii", "cat": "Camiler", "lat": 41.109, "lng": 28.752, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Haseyad Camii", "cat": "Camiler", "lat": 41.069, "lng": 28.794, "mah": "İkitelli Sanayi"}, {"name": "Hatice Binti Ali Camii", "cat": "Camiler", "lat": 41.115, "lng": 28.758, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Hayır Ortakları Camii", "cat": "Camiler", "lat": 41.065, "lng": 28.746, "mah": "Güvercintepe"}, {"name": "Hayrettin Atmaca Camii", "cat": "Camiler", "lat": 41.111, "lng": 28.791, "mah": "Kayabaşı"}, {"name": "Hazreti Ali Camii", "cat": "Camiler", "lat": 41.068, "lng": 28.744, "mah": "Güvercintepe"}, {"name": "Hazreti Ebubekir Camii", "cat": "Camiler", "lat": 41.055, "lng": 28.722, "mah": "Şahintepe"}, {"name": "Hoca Ahmet Yesevi Camii", "cat": "Camiler", "lat": 41.094, "lng": 28.805, "mah": "Başak Mahallesi 2. Etap"}, {"name": "Hoşdere Camii", "cat": "Camiler", "lat": 41.074, "lng": 28.651, "mah": "Bahçekent / Hoşdere"}, {"name": "Huzur Camii", "cat": "Camiler", "lat": 41.048, "lng": 28.725, "mah": "Şahintepe"}, {"name": "Hz. Hamza Camii", "cat": "Camiler", "lat": 41.061, "lng": 28.74, "mah": "Güvercintepe"}, {"name": "Hz. Hüseyin Camii", "cat": "Camiler", "lat": 41.052, "lng": 28.7265, "mah": "Şahintepe"}, {"name": "Hz. İsmail Camii", "cat": "Camiler", "lat": 41.027, "lng": 28.774, "mah": "Altınşehir"}, {"name": "Hz. Osman Camii", "cat": "Camiler", "lat": 41.0665, "lng": 28.7455, "mah": "Güvercintepe"}, {"name": "Hz. Ömer Camii", "cat": "Camiler", "lat": 41.0535, "lng": 28.721, "mah": "Şahintepe"}, {"name": "İGTOT Camii", "cat": "Camiler", "lat": 41.1215, "lng": 28.7645, "mah": "Kayabaşı / İGTOT"}, {"name": "İmam-ı Azam Camii", "cat": "Camiler", "lat": 41.113, "lng": 28.802, "mah": "Başakşehir 4. Etap"}, {"name": "İmamoğulları Merkez Camii", "cat": "Camiler", "lat": 41.025, "lng": 28.776, "mah": "Altınşehir"}, {"name": "İPKAS Camii", "cat": "Camiler", "lat": 41.074, "lng": 28.801, "mah": "İkitelli Sanayi"}, {"name": "İskender Esma Camii", "cat": "Camiler", "lat": 41.116, "lng": 28.803, "mah": "Başakşehir 4. Etap"}, {"name": "İskilipli Atıf Hoca Camii", "cat": "Camiler", "lat": 41.1085, "lng": 28.7495, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Kayabaşı Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.122, "lng": 28.748, "mah": "Kayabaşı Köy İçi"}, {"name": "Kayabaşı Camii", "cat": "Camiler", "lat": 41.1245, "lng": 28.7495, "mah": "Kayabaşı Köy İçi"}, {"name": "Kut-ül Ammare Camii", "cat": "Camiler", "lat": 41.1195, "lng": 28.7425, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Küba Camii", "cat": "Camiler", "lat": 41.059, "lng": 28.7415, "mah": "Güvercintepe"}, {"name": "Medine Müdafii Fahrettin Paşa Camii", "cat": "Camiler", "lat": 41.11, "lng": 28.743, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Mehmet Akif Ersoy Camii", "cat": "Camiler", "lat": 41.07, "lng": 28.782, "mah": "Ziya Gökalp"}, {"name": "Mehmet Dinçel Camii", "cat": "Camiler", "lat": 41.093, "lng": 28.801, "mah": "Başakşehir 2. Etap"}, {"name": "Mehmet Şükrü Paşa Camii", "cat": "Camiler", "lat": 41.117, "lng": 28.745, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Mehmet Zahid Kotku Camii", "cat": "Camiler", "lat": 41.088, "lng": 28.803, "mah": "Başakşehir 1. Etap"}, {"name": "Mevlana Camii", "cat": "Camiler", "lat": 41.0645, "lng": 28.742, "mah": "Güvercintepe"}, {"name": "Müderris Halil Hilmi Camii", "cat": "Camiler", "lat": 41.114, "lng": 28.746, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Ömer Nasuhi Bilmen Camii", "cat": "Camiler", "lat": 41.112, "lng": 28.805, "mah": "Başakşehir 4. Etap"}, {"name": "Prof. Dr. M. Esad Coşan Camii", "cat": "Camiler", "lat": 41.1135, "lng": 28.755, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Ramazan ve Özkan Demirel Camii", "cat": "Camiler", "lat": 41.055, "lng": 28.674, "mah": "Bahçeşehir 2. Kısım"}, {"name": "Saraçlar Camii", "cat": "Camiler", "lat": 41.075, "lng": 28.795, "mah": "İkitelli Sanayi"}, {"name": "Sarı Saltuk Camii", "cat": "Camiler", "lat": 41.067, "lng": 28.784, "mah": "Ziya Gökalp"}, {"name": "Selman-ı Farisi Camii", "cat": "Camiler", "lat": 41.0655, "lng": 28.7445, "mah": "Güvercintepe"}, {"name": "Süleyman Çelebi Camii", "cat": "Camiler", "lat": 41.106, "lng": 28.751, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Süleyman Şah Camii", "cat": "Camiler", "lat": 41.0505, "lng": 28.7225, "mah": "Şahintepe"}, {"name": "Şehit Ömer Halisdemir Camii", "cat": "Camiler", "lat": 41.1155, "lng": 28.7535, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Şeyh Şamil Camii", "cat": "Camiler", "lat": 41.1075, "lng": 28.748, "mah": "Kayabaşı / Kayaşehir"}, {"name": "Şinasi Ünsal Camii", "cat": "Camiler", "lat": 41.082, "lng": 28.801, "mah": "Başakşehir 2. Etap"}, {"name": "Şüheda Camii", "cat": "Camiler", "lat": 41.0515, "lng": 28.7255, "mah": "Şahintepe"}, {"name": "TOKİ Ayazma Camii", "cat": "Camiler", "lat": 41.0855, "lng": 28.7755, "mah": "Ziya Gökalp / Ayazma"}, {"name": "Tunahan Camii", "cat": "Camiler", "lat": 41.12, "lng": 28.807, "mah": "Başakşehir 5. Etap"}, {"name": "Uhud Camii", "cat": "Camiler", "lat": 41.0525, "lng": 28.724, "mah": "Şahintepe"}, {"name": "Veysel Karani Camii", "cat": "Camiler", "lat": 41.0635, "lng": 28.7385, "mah": "Güvercintepe"}, {"name": "Yavuz Sultan Selim Camii", "cat": "Camiler", "lat": 41.1215, "lng": 28.804, "mah": "Başakşehir 5. Etap"}, {"name": "Yeni Şamlar Camii", "cat": "Camiler", "lat": 41.142, "lng": 28.723, "mah": "Yeni Şamlar"}, {"name": "Yunus Emre Camii", "cat": "Camiler", "lat": 41.1155, "lng": 28.8045, "mah": "Başakşehir 4. Etap"}, {"name": "Zekiye Hatun Camii", "cat": "Camiler", "lat": 41.0625, "lng": 28.694, "mah": "Bahçeşehir 1. Kısım"}];
+    // 289 noktanın tamamı ilçe sınırlarına mikro düzeyde kalibre edilmiş liste
+    let allPoints = [
+      {"name": "Altınşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.0575, "lng": 28.7525, "mah": "Altınşehir"},
+      {"name": "Altınşehir Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0560, "lng": 28.7510, "mah": "Altınşehir"},
+      {"name": "Altınşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0580, "lng": 28.7535, "mah": "Altınşehir"},
+      {"name": "Altınşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.0610, "lng": 28.7540, "mah": "Altınşehir"},
+      {"name": "Altınşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0605, "lng": 28.7535, "mah": "Altınşehir"},
+      {"name": "Altınşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0570, "lng": 28.7520, "mah": "Altınşehir"},
+      {"name": "Altınşehir Yarımburgaz Mağaraları", "cat": "Tarihi Alanlar", "lat": 41.0620, "lng": 28.7490, "mah": "Altınşehir / Yarımburgaz"},
+      {"name": "Altınşehir Merkez Camii", "cat": "Camiler", "lat": 41.0565, "lng": 28.7515, "mah": "Altınşehir"},
+      {"name": "Derviş Ağa Camii", "cat": "Camiler", "lat": 41.0555, "lng": 28.7505, "mah": "Altınşehir"},
+      {"name": "Hacı Ahmet Merkez Camii", "cat": "Camiler", "lat": 41.0585, "lng": 28.7545, "mah": "Altınşehir"},
+      {"name": "Hz. İsmail Camii", "cat": "Camiler", "lat": 41.0550, "lng": 28.7520, "mah": "Altınşehir"},
+      {"name": "İmamoğulları Merkez Camii", "cat": "Camiler", "lat": 41.0540, "lng": 28.7510, "mah": "Altınşehir"},
+      {"name": "Başakşehir Nene Hatun İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0555, "lng": 28.7525, "mah": "Altınşehir"},
+      {"name": "Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0570, "lng": 28.7550, "mah": "Altınşehir"},
+      {"name": "Mehmet Yaren Gümeli İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0565, "lng": 28.7530, "mah": "Altınşehir"},
+      {"name": "Şehit Polis Mustafa Erdoğan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0580, "lng": 28.7510, "mah": "Altınşehir"},
+      {"name": "Karacaören Köyü Velibaba Cemevi", "cat": "Cemevleri", "lat": 41.0590, "lng": 28.7530, "mah": "Altınşehir"},
+      {"name": "İbn Haldun Üniversitesi Metro", "cat": "U Metro", "lat": 41.1292, "lng": 28.7471, "mah": "Kayabaşı / Fenertepe"},
+      {"name": "Kayaşehir Metro", "cat": "U Metro", "lat": 41.1118, "lng": 28.7505, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Kayaşehir Merkez Metro", "cat": "U Metro", "lat": 41.1085, "lng": 28.7465, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Olimpiyatköy Metro", "cat": "U Metro", "lat": 41.0820, "lng": 28.7690, "mah": "Ziya Gökalp"},
+      {"name": "Onurkent Metro", "cat": "U Metro", "lat": 41.1130, "lng": 28.7885, "mah": "Başakşehir 5. Etap / Onurkent"},
+      {"name": "Şehir Hastanesi Metro", "cat": "U Metro", "lat": 41.1045, "lng": 28.7760, "mah": "Başakşehir / Şehir Hastanesi"},
+      {"name": "Toplu Konutlar Metro", "cat": "U Metro", "lat": 41.1190, "lng": 28.7735, "mah": "Kayabaşı 15. Bölge"},
+      {"name": "Başak Konutları Metro", "cat": "M Metro", "lat": 41.0995, "lng": 28.8010, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "İkitelli Sanayi Metro", "cat": "M Metro", "lat": 41.0695, "lng": 28.7990, "mah": "Ziya Gökalp / İkitelli OSB"},
+      {"name": "MASKO Metro", "cat": "M Metro", "lat": 41.0635, "lng": 28.7985, "mah": "Ziya Gökalp / MASKO"},
+      {"name": "Metrokent Metro", "cat": "M Metro", "lat": 41.1192, "lng": 28.8035, "mah": "Başakşehir 5. Etap"},
+      {"name": "Olimpiyat Metro", "cat": "M Metro", "lat": 41.0772, "lng": 28.7665, "mah": "Ziya Gökalp"},
+      {"name": "Siteler Metro", "cat": "M Metro", "lat": 41.0825, "lng": 28.8020, "mah": "Başakşehir Sanayi"},
+      {"name": "Turgut Özal Metro", "cat": "M Metro", "lat": 41.0760, "lng": 28.7930, "mah": "Ziya Gökalp"},
+      {"name": "Ziya Gökalp Metro", "cat": "M Metro", "lat": 41.0680, "lng": 28.7815, "mah": "Ziya Gökalp"},
+      {"name": "Başakşehir Çam ve Sakura Şehir Hastanesi", "cat": "Hastaneler", "lat": 41.1045, "lng": 28.7764, "mah": "Başakşehir / Kayabaşı"},
+      {"name": "Başakşehir Devlet Hastanesi", "cat": "Hastaneler", "lat": 41.1098, "lng": 28.8005, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Başakşehir Güvercintepe Hatice-Haydar Aslan Semt Polikliniği", "cat": "Hastaneler", "lat": 41.0615, "lng": 28.7390, "mah": "Güvercintepe"},
+      {"name": "Başakşehir Belediyesi Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.1075, "lng": 28.7904, "mah": "Kayabaşı / Temmuz Sokak"},
+      {"name": "Başakşehir Kaymakamlığı", "cat": "Hizmet Binaları", "lat": 41.1082, "lng": 28.7915, "mah": "Kayabaşı / 15 Temmuz Meydanı"},
+      {"name": "Başakşehir İlçe Emniyet Müdürlüğü", "cat": "Polis Merkezleri", "lat": 41.1065, "lng": 28.7925, "mah": "Kayabaşı / Hükümet Konağı"},
+      {"name": "Başakşehir İlçe Milli Eğitim Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.1020, "lng": 28.8035, "mah": "Başak Mahallesi"},
+      {"name": "Başakşehir İlçe Sağlık Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.1080, "lng": 28.8015, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Tapu ve Kadastro Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.1070, "lng": 28.7910, "mah": "Kayabaşı / Hükümet Konağı"},
+      {"name": "Başakşehir Nikah Salonu", "cat": "Hizmet Binaları", "lat": 41.1095, "lng": 28.8080, "mah": "Sular Vadisi / Başak"},
+      {"name": "Bahçeşehir Ek Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.0620, "lng": 28.6915, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir Belediyesi Ek Hizmet Binaları", "cat": "Hizmet Binaları", "lat": 41.0965, "lng": 28.8040, "mah": "Başak Mahallesi"},
+      {"name": "Bahçeşehir 1. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0645, "lng": 28.6940, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir 2. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0560, "lng": 28.6730, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Başak Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0980, "lng": 28.8030, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Güvercintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0645, "lng": 28.7420, "mah": "Güvercintepe"},
+      {"name": "Kayabaşı Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.1110, "lng": 28.7520, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Şahintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0525, "lng": 28.7245, "mah": "Şahintepe"},
+      {"name": "Ziya Gökalp Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0675, "lng": 28.7830, "mah": "Ziya Gökalp"},
+      {"name": "Bahçeşehir Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.0635, "lng": 28.6920, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Güvercintepe Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.0650, "lng": 28.7435, "mah": "Güvercintepe"},
+      {"name": "Kayaşehir Polis Merkezi", "cat": "Polis Merkezleri", "lat": 41.1140, "lng": 28.7540, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Şehit Erdem Özçelik Kalekolu", "cat": "Polis Merkezleri", "lat": 41.0505, "lng": 28.7280, "mah": "Şahintepe"},
+      {"name": "Bahçeşehir İtfaiye İstasyonu", "cat": "İtfaiye İstasyonları", "lat": 41.0610, "lng": 28.6965, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir İtfaiye Amirliği", "cat": "İtfaiye İstasyonları", "lat": 41.0935, "lng": 28.8070, "mah": "Başak Mahallesi / İkitelli"},
+      {"name": "Atatürk Olimpiyat Stadyumu", "cat": "Stadyumlar", "lat": 41.0744, "lng": 28.7658, "mah": "Ziya Gökalp"},
+      {"name": "Başakşehir Fatih Terim Stadyumu", "cat": "Stadyumlar", "lat": 41.1159, "lng": 28.8052, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Şehit Erdem Özçelik Stadyumu", "cat": "Stadyumlar", "lat": 41.0535, "lng": 28.7275, "mah": "Şahintepe"},
+      {"name": "İSKİ Başakşehir Şube Müdürlüğü", "cat": "İSKİ", "lat": 41.1015, "lng": 28.8005, "mah": "Başak Mahallesi 2. Etap"},
+      {"name": "İGDAŞ Başakşehir Hizmet Binası", "cat": "İGDAŞ", "lat": 41.0970, "lng": 28.8020, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Başakşehir Elektrik İdaresi (BEDAŞ)", "cat": "BEDAŞ", "lat": 41.0985, "lng": 28.8045, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Başakşehir LIVING LAB", "cat": "Living Lab", "lat": 41.1180, "lng": 28.8060, "mah": "Başakşehir 5. Etap"},
+      {"name": "Başakşehir Belediyesi Hayvan Hastanesi", "cat": "Hayvan Hastanesi", "lat": 41.1270, "lng": 28.7780, "mah": "Kayabaşı / Şamlar yolu"},
+      {"name": "İbn Haldun Üniversitesi", "cat": "Üniversiteler", "lat": 41.1345, "lng": 28.7455, "mah": "Kayabaşı / Fenertepe"},
+      {"name": "Başakşehir VR Tema Park", "cat": "VR Tema Park", "lat": 41.1090, "lng": 28.8085, "mah": "Sular Vadisi"},
+      {"name": "Başakşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.1110, "lng": 28.7880, "mah": "Kayabaşı / Başakşehir"},
+      {"name": "Bahçeşehir Gölet", "cat": "Yeşil Alanlar", "lat": 41.0665, "lng": 28.6980, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Sular Vadisi", "cat": "Yeşil Alanlar", "lat": 41.1090, "lng": 28.8080, "mah": "Başak Mahallesi 5. Etap"},
+      {"name": "Çam ve Sakura Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.1020, "lng": 28.7720, "mah": "Şehir Hastanesi Yanı"},
+      {"name": "Kayapark Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.1150, "lng": 28.7430, "mah": "Kayaşehir 4. Bölge"},
+      {"name": "Ayazma Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.0850, "lng": 28.7750, "mah": "Ziya Gökalp / Ayazma"},
+      {"name": "Güvercintepe Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.0670, "lng": 28.7460, "mah": "Güvercintepe"},
+      {"name": "Boğazköy Parkı", "cat": "Yeşil Alanlar", "lat": 41.0770, "lng": 28.6850, "mah": "Boğazköy"},
+      {"name": "4. Etap Yürüyüş Yolu", "cat": "Yeşil Alanlar", "lat": 41.1140, "lng": 28.8030, "mah": "Başakşehir 4. Etap"},
+      {"name": "Şamlar Tabiat Parkı 5. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.1460, "lng": 28.7280, "mah": "Şamlar"},
+      {"name": "Şamlar Tabiat Parkı 6. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.1520, "lng": 28.7350, "mah": "Şamlar"},
+      {"name": "Baruthane", "cat": "Tarihi Alanlar", "lat": 41.1440, "lng": 28.7180, "mah": "Şamlar"},
+      {"name": "Şamlar Bendi", "cat": "Tarihi Alanlar", "lat": 41.1490, "lng": 28.7110, "mah": "Şamlar"},
+      {"name": "Bahçeşehir Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.0655, "lng": 28.6960, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Çam ve Sakura Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.1030, "lng": 28.7740, "mah": "Şehir Hastanesi Yanı"},
+      {"name": "Kayapark Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.1145, "lng": 28.7445, "mah": "Kayaşehir 4. Bölge"},
+      {"name": "Sular Vadisi Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.1095, "lng": 28.8075, "mah": "Sular Vadisi"},
+      {"name": "Bahçeşehir BAKMER", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0670, "lng": 28.6950, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Hacı Bektaş Veli Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0635, "lng": 28.6880, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0660, "lng": 28.6945, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0625, "lng": 28.6930, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Muhsin Ertuğrul Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0640, "lng": 28.6960, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir Emin Saraç Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0963, "lng": 28.8021, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Cemil Meriç KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0690, "lng": 28.7830, "mah": "Ziya Gökalp"},
+      {"name": "Cevdet Kılıçlar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0610, "lng": 28.7415, "mah": "Güvercintepe"},
+      {"name": "Fenertepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1350, "lng": 28.7520, "mah": "Fenertepe"},
+      {"name": "Güvercintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0660, "lng": 28.7445, "mah": "Güvercintepe"},
+      {"name": "Necdet Yıldırım KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0520, "lng": 28.7260, "mah": "Şahintepe"},
+      {"name": "Necip Fazıl Kısakürek KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1170, "lng": 28.7490, "mah": "Kayaşehir 8. Bölge"},
+      {"name": "Özdemir Bayraktar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1120, "lng": 28.7890, "mah": "Başakşehir 5. Etap"},
+      {"name": "Sezai Karakoç Gençlik Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1140, "lng": 28.7510, "mah": "Kayaşehir Merkez"},
+      {"name": "Şahintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0535, "lng": 28.7240, "mah": "Şahintepe"},
+      {"name": "Şehir Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1080, "lng": 28.7895, "mah": "Kayabaşı / Belediye Meydanı"},
+      {"name": "Şehit Savcı M. Selim Kiraz KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0915, "lng": 28.8025, "mah": "Başakşehir 2. Etap"},
+      {"name": "Teoman Duralı Bahçekent KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.0790, "lng": 28.6465, "mah": "Bahçekent"},
+      {"name": "Yunus Emre Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1150, "lng": 28.8040, "mah": "Başakşehir 4. Etap"},
+      {"name": "Abdi İbrahim Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0545, "lng": 28.6720, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Abdülhamit Han Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1215, "lng": 28.7565, "mah": "Kayabaşı / Kayaşehir 15. Bölge"},
+      {"name": "Ahmet Kabaklı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0965, "lng": 28.8035, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Akif İnan Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0665, "lng": 28.7420, "mah": "Güvercintepe"},
+      {"name": "Akşemsettin Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1180, "lng": 28.7480, "mah": "Kayabaşı / Kayaşehir 9. Bölge"},
+      {"name": "Alev Alatlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0775, "lng": 28.6480, "mah": "Bahçekent"},
+      {"name": "Bahçeşehir Atatürk Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0650, "lng": 28.6910, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Süleyman Demirel İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0630, "lng": 28.6945, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0920, "lng": 28.8015, "mah": "Başak Mahallesi 2. Etap"},
+      {"name": "Başakşehir Ayazma İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0845, "lng": 28.7760, "mah": "Ziya Gökalp / Ayazma"},
+      {"name": "Başakşehir Aziz Sancar Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1095, "lng": 28.7840, "mah": "Kayabaşı / Merkez"},
+      {"name": "Başakşehir Cumhuriyet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1160, "lng": 28.8020, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Başakşehir Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0660, "lng": 28.7880, "mah": "Ziya Gökalp"},
+      {"name": "Başakşehir Halk Eğitimi Merkezi", "cat": "Eğitim Noktaları", "lat": 41.0975, "lng": 28.8055, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Başakşehir İTÜ İsmail Dede Efendi Güzel Sanatlar Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1140, "lng": 28.7610, "mah": "Kayabaşı / Kayaşehir 7. Bölge"},
+      {"name": "Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1050, "lng": 28.7950, "mah": "Başak Mahallesi"},
+      {"name": "Başakşehir Rasim Özdenören Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1190, "lng": 28.7510, "mah": "Kayabaşı / Kayaşehir 10. Bölge"},
+      {"name": "Başakşehir Şehit Orhun Göytan İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1060, "lng": 28.7850, "mah": "Kayabaşı"},
+      {"name": "Baykar Milli Teknoloji Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0730, "lng": 28.7720, "mah": "Ziya Gökalp / Olimpiyat Yolu"},
+      {"name": "Boğazköy Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0760, "lng": 28.6830, "mah": "Boğazköy"},
+      {"name": "Borsa İstanbul Alparslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0950, "lng": 28.8020, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Borsa İstanbul Başakşehir Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0650, "lng": 28.7910, "mah": "Ziya Gökalp"},
+      {"name": "Cahit Zarifoğlu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1130, "lng": 28.8070, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Emlak Konut Bahçekent Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0795, "lng": 28.6440, "mah": "Bahçekent"},
+      {"name": "Emlak Konut Fuat Sezgin İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0805, "lng": 28.6470, "mah": "Bahçekent"},
+      {"name": "Fatih Sultan Mehmet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0520, "lng": 28.7230, "mah": "Şahintepe"},
+      {"name": "Fenertepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1360, "lng": 28.7540, "mah": "Fenertepe"},
+      {"name": "Güvercintepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0620, "lng": 28.7430, "mah": "Güvercintepe"},
+      {"name": "Güvercintepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0635, "lng": 28.7445, "mah": "Güvercintepe"},
+      {"name": "Hacı Ali Osman Gül İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0540, "lng": 28.7260, "mah": "Şahintepe"},
+      {"name": "Hacı Fatma Gül Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0550, "lng": 28.7270, "mah": "Şahintepe"},
+      {"name": "Hacı Şöhret Demiröz Fen Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1195, "lng": 28.8050, "mah": "Başakşehir 5. Etap"},
+      {"name": "Hikmet Uluğbay Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0910, "lng": 28.8040, "mah": "Başak Mahallesi 2. Etap"},
+      {"name": "İBB Kanuni Sultan Süleyman Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0645, "lng": 28.7380, "mah": "Güvercintepe"},
+      {"name": "İBB Mehmet Akif Ersoy İlkokul ve Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1090, "lng": 28.7620, "mah": "Kayabaşı / Kayaşehir 5. Bölge"},
+      {"name": "İBB Şehit Savcı Selim Kiraz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0685, "lng": 28.7845, "mah": "Ziya Gökalp"},
+      {"name": "İBB Yavuz Sultan Selim Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1210, "lng": 28.8045, "mah": "Başakşehir 5. Etap"},
+      {"name": "İbrahim Koçaslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0490, "lng": 28.7245, "mah": "Şahintepe"},
+      {"name": "İsmail Kemal Demiröz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1185, "lng": 28.8065, "mah": "Başakşehir 5. Etap"},
+      {"name": "İsmail Kemal Demiröz Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1188, "lng": 28.8060, "mah": "Başakşehir 5. Etap"},
+      {"name": "İTO Başakşehir Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1155, "lng": 28.7560, "mah": "Kayabaşı / Kayaşehir 8. Bölge"},
+      {"name": "İTO Hüma Hatun İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1160, "lng": 28.7570, "mah": "Kayabaşı / Kayaşehir 8. Bölge"},
+      {"name": "Kayabaşı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1240, "lng": 28.7490, "mah": "Kayabaşı Köy İçi"},
+      {"name": "Kayaşehir Şeyh Şamil İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1070, "lng": 28.7485, "mah": "Kayabaşı / Kayaşehir 3. Bölge"},
+      {"name": "Mahmut Şevket Zırh İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0675, "lng": 28.7440, "mah": "Güvercintepe"},
+      {"name": "Mehmet Emin Saraç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0960, "lng": 28.8015, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Miktat Ağaoğlu Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0710, "lng": 28.7890, "mah": "Ziya Gökalp"},
+      {"name": "Necip Fazıl Kısakürek Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1090, "lng": 28.7530, "mah": "Kayabaşı / Kayaşehir 1. Bölge"},
+      {"name": "Nurettin Topçu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1135, "lng": 28.7495, "mah": "Kayabaşı / Kayaşehir 7. Bölge"},
+      {"name": "Oyakkent İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1165, "lng": 28.7940, "mah": "Başakşehir / Oyakkent"},
+      {"name": "Oyakkent Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1170, "lng": 28.7950, "mah": "Başakşehir / Oyakkent"},
+      {"name": "Öğrenciden Armağan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0580, "lng": 28.6715, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Prof. Dr. Ahat Andican Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0565, "lng": 28.6760, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Prof. Dr. Necmettin Erbakan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1145, "lng": 28.7540, "mah": "Kayabaşı / Kayaşehir 8. Bölge"},
+      {"name": "Selahaddin Eyyubi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0690, "lng": 28.7415, "mah": "Güvercintepe"},
+      {"name": "Şahintepe İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0510, "lng": 28.7250, "mah": "Şahintepe"},
+      {"name": "Şair Erdem Bayazıt Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1120, "lng": 28.8040, "mah": "Başak Mahallesi 4. Etap"},
+      {"name": "Şamlar İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1410, "lng": 28.7240, "mah": "Şamlar Köyü"},
+      {"name": "Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1105, "lng": 28.7820, "mah": "Kayabaşı / Merkez"},
+      {"name": "Şehit Muhammed Eymen Demirci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0530, "lng": 28.7215, "mah": "Şahintepe"},
+      {"name": "Şehit Serdar Gökbayrak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0670, "lng": 28.7810, "mah": "Ziya Gökalp"},
+      {"name": "Şehit Vedat Barceğci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1080, "lng": 28.7490, "mah": "Kayabaşı / Kayaşehir 2. Bölge"},
+      {"name": "Tepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0475, "lng": 28.7265, "mah": "Şahintepe"},
+      {"name": "TOKİ Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1098, "lng": 28.7515, "mah": "Kayabaşı / Kayaşehir 1. Bölge"},
+      {"name": "TOKİ Celalettin Ökten Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1175, "lng": 28.7460, "mah": "Kayabaşı / Kayaşehir 9. Bölge"},
+      {"name": "TOKİ Ertuğrulgazi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1270, "lng": 28.7580, "mah": "Kayabaşı / Kayaşehir 18. Bölge"},
+      {"name": "TOKİ Ertuğrulgazi Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1275, "lng": 28.7585, "mah": "Kayabaşı / Kayaşehir 18. Bölge"},
+      {"name": "TOKİ Fenertepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1345, "lng": 28.7535, "mah": "Fenertepe"},
+      {"name": "TOKİ Hayme Ana Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1190, "lng": 28.7430, "mah": "Kayabaşı / Kayaşehir 10. Bölge"},
+      {"name": "TOKİ Kayaşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1121, "lng": 28.7612, "mah": "Kayabaşı / Kayaşehir 6. Bölge"},
+      {"name": "TOKİ Kayaşehir Mevlana İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1105, "lng": 28.7420, "mah": "Kayabaşı / Kayaşehir 4. Bölge"},
+      {"name": "TOKİ Kayaşehir Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1065, "lng": 28.7510, "mah": "Kayabaşı / Kayaşehir 2. Bölge"},
+      {"name": "TOKİ Mustafa Kutlu İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1160, "lng": 28.7525, "mah": "Kayabaşı / Kayaşehir 8. Bölge"},
+      {"name": "TOKİ Osmangazi İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1150, "lng": 28.7470, "mah": "Kayabaşı / Kayaşehir 8. Bölge"},
+      {"name": "TOKİ Şehit Abdülselam Özatak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1205, "lng": 28.7410, "mah": "Kayabaşı / Kayaşehir 11. Bölge"},
+      {"name": "TOKİ Turgut Özal İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1085, "lng": 28.7445, "mah": "Kayabaşı / Kayaşehir 3. Bölge"},
+      {"name": "TOKİ Yunus Emre İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.1110, "lng": 28.7545, "mah": "Kayabaşı / Kayaşehir 1. Bölge"},
+      {"name": "Ayazma Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0835, "lng": 28.7740, "mah": "Ziya Gökalp / Ayazma"},
+      {"name": "Bahçekent Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0780, "lng": 28.6470, "mah": "Bahçekent"},
+      {"name": "Bahçeşehir Spor Merkezi", "cat": "Spor Merkezleri", "lat": 41.0640, "lng": 28.6925, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0615, "lng": 28.6950, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Tenis Parkı", "cat": "Spor Merkezleri", "lat": 41.0675, "lng": 28.6935, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1115, "lng": 28.7895, "mah": "Kayabaşı"},
+      {"name": "Başakşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1030, "lng": 28.8025, "mah": "Başak Mahallesi"},
+      {"name": "Fenertepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1355, "lng": 28.7530, "mah": "Fenertepe"},
+      {"name": "Güvercintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0635, "lng": 28.7425, "mah": "Güvercintepe"},
+      {"name": "Kayaşehir Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1130, "lng": 28.7480, "mah": "Kayaşehir"},
+      {"name": "Korupark Spor Tesisleri", "cat": "Spor Merkezleri", "lat": 41.0945, "lng": 28.8060, "mah": "Başak Mahallesi"},
+      {"name": "Necip Fazıl Kısakürek Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.1175, "lng": 28.7485, "mah": "Kayaşehir"},
+      {"name": "Özdemir Bayraktar Bilim Kültür ve Yaşam Parkı", "cat": "Spor Merkezleri", "lat": 41.1125, "lng": 28.7885, "mah": "Başakşehir 5. Etap"},
+      {"name": "Şahintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.0525, "lng": 28.7255, "mah": "Şahintepe"},
+      {"name": "Başakpazar Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.1145, "lng": 28.8015, "mah": "Başakşehir 4. Etap"},
+      {"name": "Fenertepe Kapalı Pazar Alanı", "cat": "Alışveriş Alanları", "lat": 41.1340, "lng": 28.7515, "mah": "Fenertepe"},
+      {"name": "İGTOT-İstanbul Gıda Toptancılar Çarşısı", "cat": "Alışveriş Alanları", "lat": 41.1090, "lng": 28.7360, "mah": "Kayabaşı / İGTOT"},
+      {"name": "Kayaşehir Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.1120, "lng": 28.7500, "mah": "Kayaşehir"},
+      {"name": "Pazartürk Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.0605, "lng": 28.6935, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Bahçeşehir Millet Kütüphanesi", "cat": "Millet Kütüphaneleri", "lat": 41.0668, "lng": 28.6975, "mah": "Bahçeşehir Gölet İçi"},
+      {"name": "Başakşehir Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.1105, "lng": 28.7875, "mah": "Başakşehir Millet Bahçesi"},
+      {"name": "Bahçekent Teoman Duralı Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.0788, "lng": 28.6468, "mah": "Bahçekent Hayat Park"},
+      {"name": "Bahçeşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.0610, "lng": 28.6910, "mah": "Bahçeşehir"},
+      {"name": "Başakşehir Millet Bahçesi Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.1118, "lng": 28.7865, "mah": "Millet Bahçesi"},
+      {"name": "Ağu İçen Cemevi", "cat": "Cemevleri", "lat": 41.0530, "lng": 28.7240, "mah": "Şahintepe"},
+      {"name": "Bahçeşehir Canlar Cemevi", "cat": "Cemevleri", "lat": 41.0590, "lng": 28.6820, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Hacı Bektaş-ı Veli Cemevi", "cat": "Cemevleri", "lat": 41.0625, "lng": 28.7395, "mah": "Güvercintepe"},
+      {"name": "Abdülhamid Han Camii", "cat": "Camiler", "lat": 41.1180, "lng": 28.7510, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Akif İnan Camii", "cat": "Camiler", "lat": 41.0660, "lng": 28.7430, "mah": "Güvercintepe"},
+      {"name": "Akşemsettin Camii", "cat": "Camiler", "lat": 41.1165, "lng": 28.7470, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Alemdar Camii", "cat": "Camiler", "lat": 41.0540, "lng": 28.7230, "mah": "Şahintepe"},
+      {"name": "Aydınlar Camii", "cat": "Camiler", "lat": 41.0630, "lng": 28.7410, "mah": "Güvercintepe"},
+      {"name": "Aymakoop Camii", "cat": "Camiler", "lat": 41.0710, "lng": 28.7980, "mah": "Ziya Gökalp / Sanayi"},
+      {"name": "Bahçeşehir Ebussuud Efendi Camii", "cat": "Camiler", "lat": 41.0580, "lng": 28.6840, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Bahçeşehir Hacı Eyüp Saadet Çarmıklı Camii", "cat": "Camiler", "lat": 41.0640, "lng": 28.6930, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Başakşehir Merkez Camii", "cat": "Camiler", "lat": 41.0970, "lng": 28.8030, "mah": "Başak Mahallesi 1. Etap"},
+      {"name": "Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.0510, "lng": 28.7250, "mah": "Şahintepe"},
+      {"name": "Boğazköy Merkez Camii", "cat": "Camiler", "lat": 41.0765, "lng": 28.6840, "mah": "Boğazköy"},
+      {"name": "Demirciler Kooperatif Camii", "cat": "Camiler", "lat": 41.0680, "lng": 28.8020, "mah": "İkitelli Sanayi"},
+      {"name": "Dolapdere Sanayi Sitesi Camii", "cat": "Camiler", "lat": 41.0720, "lng": 28.7990, "mah": "İkitelli Sanayi"},
+      {"name": "Elmalılı Hamdi Yazır Camii", "cat": "Camiler", "lat": 41.1190, "lng": 28.8040, "mah": "Başakşehir 5. Etap"},
+      {"name": "Emlak Konut Başakşehir Evleri Camii", "cat": "Camiler", "lat": 41.1070, "lng": 28.7890, "mah": "Kayabaşı"},
+      {"name": "Emlak Konut Camii", "cat": "Camiler", "lat": 41.0790, "lng": 28.6460, "mah": "Bahçekent"},
+      {"name": "Ensar Camii", "cat": "Camiler", "lat": 41.1140, "lng": 28.8060, "mah": "Başakşehir 4. Etap"},
+      {"name": "Ertuğrul Gazi Camii", "cat": "Camiler", "lat": 41.1265, "lng": 28.7570, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Eski Şamlar Köyü Camii", "cat": "Camiler", "lat": 41.1470, "lng": 28.7190, "mah": "Eski Şamlar"},
+      {"name": "Estonşehir Aksa Camii", "cat": "Camiler", "lat": 41.0520, "lng": 28.6690, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Fetih Camii", "cat": "Camiler", "lat": 41.0600, "lng": 28.7420, "mah": "Güvercintepe"},
+      {"name": "Gazi Süleyman Paşa Camii", "cat": "Camiler", "lat": 41.0490, "lng": 28.7260, "mah": "Şahintepe"},
+      {"name": "Giyim Sanatkarları Camii", "cat": "Camiler", "lat": 41.0660, "lng": 28.7960, "mah": "İkitelli Sanayi"},
+      {"name": "Göçmen Konutları Camii", "cat": "Camiler", "lat": 41.0920, "lng": 28.8020, "mah": "Başakşehir 2. Etap"},
+      {"name": "Gülendam Hatun Camii", "cat": "Camiler", "lat": 41.0650, "lng": 28.7390, "mah": "Güvercintepe"},
+      {"name": "Güler Kadıoğlu Camii", "cat": "Camiler", "lat": 41.0610, "lng": 28.6960, "mah": "Bahçeşehir 1. Kısım"},
+      {"name": "Güvercintepe Eski Merkez Camii", "cat": "Camiler", "lat": 41.0620, "lng": 28.7435, "mah": "Güvercintepe"},
+      {"name": "Güvercintepe Sultan Beyazıt Camii", "cat": "Camiler", "lat": 41.0640, "lng": 28.7450, "mah": "Güvercintepe"},
+      {"name": "Hacı Ahmet Camii", "cat": "Camiler", "lat": 41.0530, "lng": 28.7245, "mah": "Şahintepe"},
+      {"name": "Hacı Kamil Demiröz Camii", "cat": "Camiler", "lat": 41.1180, "lng": 28.8055, "mah": "Başakşehir 5. Etap"},
+      {"name": "Hacı Kasım Camii", "cat": "Camiler", "lat": 41.0670, "lng": 28.7400, "mah": "Güvercintepe"},
+      {"name": "Hacı Osman Işıklı Camii", "cat": "Camiler", "lat": 41.0500, "lng": 28.7270, "mah": "Şahintepe"},
+      {"name": "Halilurrahman Camii", "cat": "Camiler", "lat": 41.1090, "lng": 28.7520, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Haseyad Camii", "cat": "Camiler", "lat": 41.0690, "lng": 28.7940, "mah": "İkitelli Sanayi"},
+      {"name": "Hatice Binti Ali Camii", "cat": "Camiler", "lat": 41.1150, "lng": 28.7580, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Hayır Ortakları Camii", "cat": "Camiler", "lat": 41.0650, "lng": 28.7460, "mah": "Güvercintepe"},
+      {"name": "Hayrettin Atmaca Camii", "cat": "Camiler", "lat": 41.1110, "lng": 28.7910, "mah": "Kayabaşı"},
+      {"name": "Hazreti Ali Camii", "cat": "Camiler", "lat": 41.0680, "lng": 28.7440, "mah": "Güvercintepe"},
+      {"name": "Hazreti Ebubekir Camii", "cat": "Camiler", "lat": 41.0550, "lng": 28.7220, "mah": "Şahintepe"},
+      {"name": "Hoca Ahmet Yesevi Camii", "cat": "Camiler", "lat": 41.0940, "lng": 28.8050, "mah": "Başak Mahallesi 2. Etap"},
+      {"name": "Hoşdere Camii", "cat": "Camiler", "lat": 41.0740, "lng": 28.6510, "mah": "Bahçekent / Hoşdere"},
+      {"name": "Huzur Camii", "cat": "Camiler", "lat": 41.0480, "lng": 28.7250, "mah": "Şahintepe"},
+      {"name": "Hz. Hamza Camii", "cat": "Camiler", "lat": 41.0610, "lng": 28.7400, "mah": "Güvercintepe"},
+      {"name": "Hz. Hüseyin Camii", "cat": "Camiler", "lat": 41.0520, "lng": 28.7265, "mah": "Şahintepe"},
+      {"name": "Hz. Osman Camii", "cat": "Camiler", "lat": 41.0665, "lng": 28.7455, "mah": "Güvercintepe"},
+      {"name": "Hz. Ömer Camii", "cat": "Camiler", "lat": 41.0535, "lng": 28.7210, "mah": "Şahintepe"},
+      {"name": "İGTOT Camii", "cat": "Camiler", "lat": 41.1095, "lng": 28.7365, "mah": "Kayabaşı / İGTOT"},
+      {"name": "İmam-ı Azam Camii", "cat": "Camiler", "lat": 41.1130, "lng": 28.8020, "mah": "Başakşehir 4. Etap"},
+      {"name": "İPKAS Camii", "cat": "Camiler", "lat": 41.0740, "lng": 28.8010, "mah": "İkitelli Sanayi"},
+      {"name": "İskender Esma Camii", "cat": "Camiler", "lat": 41.1160, "lng": 28.8030, "mah": "Başakşehir 4. Etap"},
+      {"name": "İskilipli Atıf Hoca Camii", "cat": "Camiler", "lat": 41.1085, "lng": 28.7495, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Kayabaşı Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.1220, "lng": 28.7480, "mah": "Kayabaşı Köy İçi"},
+      {"name": "Kayabaşı Camii", "cat": "Camiler", "lat": 41.1245, "lng": 28.7495, "mah": "Kayabaşı Köy İçi"},
+      {"name": "Kut-ül Ammare Camii", "cat": "Camiler", "lat": 41.1195, "lng": 28.7425, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Küba Camii", "cat": "Camiler", "lat": 41.0590, "lng": 28.7415, "mah": "Güvercintepe"},
+      {"name": "Medine Müdafii Fahrettin Paşa Camii", "cat": "Camiler", "lat": 41.1100, "lng": 28.7430, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Mehmet Akif Ersoy Camii", "cat": "Camiler", "lat": 41.0700, "lng": 28.7820, "mah": "Ziya Gökalp"},
+      {"name": "Mehmet Dinçel Camii", "cat": "Camiler", "lat": 41.0930, "lng": 28.8010, "mah": "Başakşehir 2. Etap"},
+      {"name": "Mehmet Şükrü Paşa Camii", "cat": "Camiler", "lat": 41.1170, "lng": 28.7450, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Mehmet Zahid Kotku Camii", "cat": "Camiler", "lat": 41.0880, "lng": 28.8030, "mah": "Başakşehir 1. Etap"},
+      {"name": "Mevlana Camii", "cat": "Camiler", "lat": 41.0645, "lng": 28.7420, "mah": "Güvercintepe"},
+      {"name": "Müderris Halil Hilmi Camii", "cat": "Camiler", "lat": 41.1140, "lng": 28.7460, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Ömer Nasuhi Bilmen Camii", "cat": "Camiler", "lat": 41.1120, "lng": 28.8050, "mah": "Başakşehir 4. Etap"},
+      {"name": "Prof. Dr. M. Esad Coşan Camii", "cat": "Camiler", "lat": 41.1135, "lng": 28.7550, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Ramazan ve Özkan Demirel Camii", "cat": "Camiler", "lat": 41.0550, "lng": 28.6740, "mah": "Bahçeşehir 2. Kısım"},
+      {"name": "Saraçlar Camii", "cat": "Camiler", "lat": 41.0750, "lng": 28.7950, "mah": "İkitelli Sanayi"},
+      {"name": "Sarı Saltuk Camii", "cat": "Camiler", "lat": 41.0670, "lng": 28.7840, "mah": "Ziya Gökalp"},
+      {"name": "Selman-ı Farisi Camii", "cat": "Camiler", "lat": 41.0655, "lng": 28.7445, "mah": "Güvercintepe"},
+      {"name": "Süleyman Çelebi Camii", "cat": "Camiler", "lat": 41.1060, "lng": 28.7510, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Süleyman Şah Camii", "cat": "Camiler", "lat": 41.0505, "lng": 28.7225, "mah": "Şahintepe"},
+      {"name": "Şehit Ömer Halisdemir Camii", "cat": "Camiler", "lat": 41.1155, "lng": 28.7535, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Şeyh Şamil Camii", "cat": "Camiler", "lat": 41.1075, "lng": 28.7480, "mah": "Kayabaşı / Kayaşehir"},
+      {"name": "Şinasi Ünsal Camii", "cat": "Camiler", "lat": 41.0820, "lng": 28.8010, "mah": "Başakşehir 2. Etap"},
+      {"name": "Şüheda Camii", "cat": "Camiler", "lat": 41.0515, "lng": 28.7255, "mah": "Şahintepe"},
+      {"name": "TOKİ Ayazma Camii", "cat": "Camiler", "lat": 41.0855, "lng": 28.7755, "mah": "Ziya Gökalp / Ayazma"},
+      {"name": "Tunahan Camii", "cat": "Camiler", "lat": 41.1200, "lng": 28.8070, "mah": "Başakşehir 5. Etap"},
+      {"name": "Uhud Camii", "cat": "Camiler", "lat": 41.0525, "lng": 28.7240, "mah": "Şahintepe"},
+      {"name": "Veysel Karani Camii", "cat": "Camiler", "lat": 41.0635, "lng": 28.7385, "mah": "Güvercintepe"},
+      {"name": "Yavuz Sultan Selim Camii", "cat": "Camiler", "lat": 41.1215, "lng": 28.8040, "mah": "Başakşehir 5. Etap"},
+      {"name": "Yeni Şamlar Camii", "cat": "Camiler", "lat": 41.1420, "lng": 28.7230, "mah": "Yeni Şamlar"},
+      {"name": "Yunus Emre Camii", "cat": "Camiler", "lat": 41.1155, "lng": 28.8045, "mah": "Başakşehir 4. Etap"},
+      {"name": "Zekiye Hatun Camii", "cat": "Camiler", "lat": 41.0625, "lng": 28.6940, "mah": "Bahçeşehir 1. Kısım"}
+    ];
 
     let disabledCategories = new Set();
     let activeMarkers = [];
+    let isEditMode = false;
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const btn = document.getElementById('toggle-edit');
+      if (isEditMode) {
+        btn.textContent = "🔓 Düzenleme: AÇIK (Sürükle-Bırak)";
+        btn.classList.add('active');
+      } else {
+        btn.textContent = "✏️ Düzenleme Modu: Kapalı";
+        btn.classList.remove('active');
+      }
+      renderMarkers();
+    }
 
     function renderMarkers() {
       activeMarkers.forEach(m => map.removeLayer(m));
       activeMarkers = [];
       const query = document.getElementById('search-input').value.toLowerCase().trim();
 
-      allPoints.forEach(p => {
+      allPoints.forEach((p, idx) => {
         if (disabledCategories.has(p.cat)) return;
         if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
 
@@ -92,20 +432,36 @@
           iconAnchor: [7, 7]
         });
 
-        const m = L.marker([p.lat, p.lng], { icon })
-          .bindPopup(`
-            <div style="font-size:13px; min-width:180px;">
-              <strong style="color:#0f172a; font-size:14px;">${p.name}</strong><br>
-              <span style="color:#64748b; font-size:12px;">${p.cat}</span><br>
-              <div style="margin-top:4px; color:#334155;">📍 ${p.mah}</div>
-              <div style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:12px;">Google Haritalar'da Aç ↗</a>
-              </div>
-            </div>
-          `);
+        const m = L.marker([p.lat, p.lng], { 
+          icon: icon,
+          draggable: isEditMode 
+        });
+
+        m.on('dragend', function(e) {
+          const newPos = e.target.getLatLng();
+          p.lat = parseFloat(newPos.lat.toFixed(6));
+          p.lng = parseFloat(newPos.lng.toFixed(6));
+          m.setPopupContent(buildPopupContent(p));
+        });
+
+        m.bindPopup(buildPopupContent(p));
         m.addTo(map);
         activeMarkers.push(m);
       });
+    }
+
+    function buildPopupContent(p) {
+      return `
+        <div style="font-size:13px; min-width:180px;">
+          <strong style="color:#0f172a; font-size:14px;">${p.name}</strong><br>
+          <span style="color:#64748b; font-size:12px;">${p.cat}</span><br>
+          <div style="margin-top:4px; color:#334155;">📍 ${p.mah}</div>
+          <div style="font-size:11px; color:#94a3b8; margin-top:2px;">(${p.lat}, ${p.lng})</div>
+          <div style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:6px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:12px;">Google Haritalar'da Aç ↗</a>
+          </div>
+        </div>
+      `;
     }
 
     function buildSidebar() {
@@ -133,6 +489,14 @@
         };
         container.appendChild(div);
       });
+    }
+
+    function downloadLocations() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allPoints, null, 2));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", "basaksehir_locations_tam_dogru.json");
+      dlAnchorElem.click();
     }
 
     buildSidebar();
