@@ -1,0 +1,46 @@
+{
+  "type": "FeatureCollection",
+  "name": "Basaksehir_Onemli_Noktalar",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7612, 41.1121] },
+      "properties": {
+        "id": 74,
+        "name": "TOKİ Kayaşehir Anadolu Lisesi",
+        "category": "Eğitim Noktaları",
+        "mahalle": "Kayabaşı / Kayaşehir 6. Bölge"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7904, 41.1075] },
+      "properties": {
+        "id": 20,
+        "name": "Başakşehir Belediyesi Hizmet Binası",
+        "category": "Hizmet Binaları",
+        "mahalle": "Kayabaşı / Temmuz Sokak"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7764, 41.1045] },
+      "properties": {
+        "id": 16,
+        "name": "Başakşehir Çam ve Sakura Şehir Hastanesi",
+        "category": "Hastaneler",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7658, 41.0744] },
+      "properties": {
+        "id": 24,
+        "name": "Atatürk Olimpiyat Stadyumu",
+        "category": "Stadyumlar",
+        "mahalle": "Ziya Gökalp"
+      }
+    }
+  ]
+}
