@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Başakşehir 3D Dijital İkiz | Mapbox Standard</title>
+  <meta name="description" content="Başakşehir ilçesindeki 289 tesis ve kamu binasını 3D harita üzerinde keşfedin.">
 
   <!-- Mapbox GL JS v3 -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
@@ -20,869 +21,978 @@
     #app { display:flex; width:100vw; height:100vh; position:relative; }
     #map { flex:1; height:100%; width:100%; }
 
-    /* Glassmorphism Sidebar */
+    /* ── Glassmorphism Sidebar ── */
     #sidebar {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      bottom: 16px;
+      top: 16px; left: 16px; bottom: 16px;
       width: 390px;
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 18px;
       display: flex;
       flex-direction: column;
       z-index: 10;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
     }
     #sidebar-header {
       padding: 18px 20px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, transparent 100%);
       border-radius: 18px 18px 0 0;
     }
     .badge-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.14);
-      padding: 3px 9px;
-      border-radius: 20px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #38bdf8;
+      background: rgba(56,189,248,0.14); padding: 3px 9px;
+      border-radius: 20px; border: 1px solid rgba(56,189,248,0.25);
       margin-bottom: 8px;
     }
     #sidebar-header h1 { font-size: 1.25rem; font-weight: 800; color: #fff; line-height: 1.25; }
     #sidebar-header p { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
 
-    /* Token Uyarısı */
+    /* ── Token Modal ── */
     #token-modal {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: rgba(11, 15, 25, 0.95);
-      backdrop-filter: blur(20px);
-      z-index: 100;
-      padding: 24px;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
+      display: none; position: absolute; inset: 0;
+      background: rgba(11,15,25,0.95); backdrop-filter: blur(20px);
+      z-index: 100; padding: 24px;
+      flex-direction: column; justify-content: center; align-items: center; text-align: center;
     }
     #token-modal.show { display: flex; }
     .token-box {
-      max-width: 460px;
-      background: #1e293b;
-      padding: 28px;
-      border-radius: 16px;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      max-width: 460px; background: #1e293b; padding: 28px;
+      border-radius: 16px; border: 1px solid rgba(56,189,248,0.3);
       box-shadow: 0 20px 50px rgba(0,0,0,0.7);
     }
     .token-box h2 { font-size: 1.2rem; margin-bottom: 10px; color: #38bdf8; }
     .token-box p { font-size: 0.82rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px; }
     .token-input {
-      width: 100%;
-      padding: 10px 14px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 0.85rem;
-      margin-bottom: 12px;
-      outline: none;
+      width: 100%; padding: 10px 14px; background: #0f172a;
+      border: 1px solid #334155; border-radius: 8px;
+      color: #fff; font-size: 0.85rem; margin-bottom: 12px; outline: none;
     }
     .token-btn {
-      width: 100%;
-      padding: 10px;
-      background: #0284c7;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: 0.2s;
+      width: 100%; padding: 10px; background: #0284c7; color: #fff;
+      border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s;
     }
     .token-btn:hover { background: #0369a1; }
 
-    /* Lighting Controls */
+    /* ── Lighting Bar ── */
     .lighting-bar {
       padding: 10px 16px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(15, 23, 42, 0.4);
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(15,23,42,0.4);
     }
     .btn-light {
-      padding: 6px 4px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(30, 41, 59, 0.6);
-      color: #cbd5e1;
-      font-size: 0.72rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
+      padding: 6px 4px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(30,41,59,0.6); color: #cbd5e1;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
       transition: 0.2s;
     }
-    .btn-light:hover { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .btn-light:hover { background: rgba(56,189,248,0.15); color: #38bdf8; }
     .btn-light.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
 
+    /* ── Search Box ── */
     #search-box {
       padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       position: relative;
     }
     #search-input {
       width: 100%;
-      padding: 10px 14px 10px 36px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
-      font-size: 0.82rem;
-      color: #fff;
-      outline: none;
+      /* FIX: sağ padding temizleme butonuna yer açıyor */
+      padding: 10px 34px 10px 36px;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; font-size: 0.82rem; color: #fff;
+      outline: none; transition: border-color 0.2s;
     }
     #search-input:focus { border-color: #38bdf8; }
-    #search-box i {
-      position: absolute;
-      left: 28px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #64748b;
-      font-size: 0.85rem;
+    .search-icon {
+      position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+      color: #64748b; font-size: 0.85rem; pointer-events: none;
     }
+    /* YENİ: Arama temizleme butonu */
+    #search-clear {
+      position: absolute; right: 28px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: #64748b; cursor: pointer;
+      font-size: 0.85rem; padding: 4px 6px; border-radius: 4px;
+      display: none; transition: color 0.2s;
+    }
+    #search-clear:hover { color: #f1f5f9; }
+    #search-clear.visible { display: block; }
 
+    /* ── Tabs ── */
     .tab-header {
-      display: flex;
-      padding: 8px 16px 0;
-      gap: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; padding: 8px 16px 0; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .tab-item {
-      padding: 8px 4px;
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      position: relative;
+      padding: 8px 4px; background: none; border: none;
+      color: #94a3b8; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; position: relative;
     }
     .tab-item.active { color: #38bdf8; }
     .tab-item.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0; right: 0;
-      height: 2px;
-      background: #38bdf8;
-      box-shadow: 0 0 8px #38bdf8;
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 2px; background: #38bdf8; box-shadow: 0 0 8px #38bdf8;
     }
 
-    #list-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 14px;
-    }
+    /* ── List ── */
+    #list-container { flex: 1; overflow-y: auto; padding: 12px 14px; }
     #list-container::-webkit-scrollbar { width: 5px; }
     #list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
     .cat-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 12px;
-      border-radius: 10px;
-      margin-bottom: 5px;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      cursor: pointer;
-      transition: 0.2s;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; border-radius: 10px; margin-bottom: 5px;
+      background: rgba(30,41,59,0.4); border: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer; transition: 0.2s;
     }
-    .cat-row:hover { background: rgba(51, 65, 85, 0.6); transform: translateX(2px); }
+    .cat-row:hover { background: rgba(51,65,85,0.6); transform: translateX(2px); }
     .cat-row.inactive { opacity: 0.35; filter: grayscale(1); }
     .cat-left { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; font-weight: 600; }
     .cat-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
     .cat-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 12px; background: rgba(255,255,255,0.08); color:#94a3b8; }
 
     .place-row {
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-bottom: 6px;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      cursor: pointer;
-      transition: 0.2s;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
+      background: rgba(30,41,59,0.4); border: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer; transition: 0.2s;
     }
-    .place-row:hover { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); transform: translateX(3px); }
+    .place-row:hover { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.4); transform: translateX(3px); }
     .place-name { font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
-    .place-meta { font-size: 0.72rem; color: #94a3b8; display: flex; gap: 8px; }
+    .place-meta { font-size: 0.72rem; color: #94a3b8; display: flex; gap: 8px; flex-wrap: wrap; }
 
+    /* ── HUD Tools ── */
     #hud-tools {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 10;
+      position: absolute; top: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 10;
     }
     .hud-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      transition: 0.2s;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(15,23,42,0.8); backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.15); color: #fff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; transition: 0.2s; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
-    .hud-btn:hover { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border-color: #38bdf8; transform: scale(1.05); }
+    .hud-btn:hover { background: rgba(56,189,248,0.25); color: #38bdf8; border-color: #38bdf8; transform: scale(1.05); }
+    /* YENİ: Mobilde sidebar toggle — sadece küçük ekranlarda görünür */
+    #sidebar-toggle-btn { display: none; }
 
-    .marker-pin-3d {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 3px solid #fff;
-      box-shadow: 0 0 16px currentColor, 0 4px 12px rgba(0,0,0,0.7);
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .marker-pin-3d:hover { transform: scale(1.4) translateY(-3px); }
+    /* ── Popup ── */
     .mapboxgl-popup-content {
-      background: rgba(15, 23, 42, 0.94) !important;
+      background: rgba(15,23,42,0.96) !important;
       backdrop-filter: blur(20px) !important;
-      border: 1px solid rgba(56, 189, 248, 0.35) !important;
+      border: 1px solid rgba(56,189,248,0.35) !important;
       border-radius: 14px !important;
       padding: 16px !important;
       color: #f1f5f9 !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.7) !important;
     }
-    .mapboxgl-popup-tip { border-top-color: rgba(15, 23, 42, 0.94) !important; }
+    .mapboxgl-popup-tip { border-top-color: rgba(15,23,42,0.96) !important; }
+    /* FIX: Popup kapat butonu dark tema ile uyumlu */
+    .mapboxgl-popup-close-button {
+      color: #94a3b8 !important;
+      font-size: 1.15rem !important;
+      padding: 5px 9px !important;
+      right: 3px !important; top: 3px !important;
+      border-radius: 6px !important;
+      transition: 0.2s !important;
+    }
+    .mapboxgl-popup-close-button:hover {
+      color: #fff !important;
+      background: rgba(255,255,255,0.12) !important;
+    }
 
+    /* ── Mobil ── */
     @media(max-width:768px) {
-      #sidebar { width: calc(100% - 32px); height: 48%; top: auto; bottom: 16px; }
+      #sidebar {
+        width: calc(100% - 32px); height: 50%;
+        top: auto; bottom: 16px;
+      }
+      /* YENİ: Sidebar gizleme animasyonu */
+      #sidebar.sidebar-hidden {
+        transform: translateY(calc(100% + 24px));
+      }
+      #sidebar-toggle-btn { display: flex; }
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div id="map"></div>
+<div id="app">
+  <div id="map"></div>
 
-    <div id="token-modal">
-      <div class="token-box">
-        <h2>Mapbox Erişim Anahtarı (Token)</h2>
-        <p>Mapbox v3 Standard 3D motoru için public token gereklidir. <br><a href="https://account.mapbox.com/" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">mapbox.com</a> hesabınızdaki <code>pk.eyJ...</code> anahtarını girin.</p>
-        <input type="text" id="token-input" class="token-input" placeholder="pk.eyJ1...">
-        <button class="token-btn" onclick="saveToken()">Haritayı Başlat</button>
-      </div>
-    </div>
-
-    <div id="hud-tools">
-      <button class="hud-btn" onclick="togglePerspective()" title="3D / 2D Perspektif Değiştir"><i class="fa-solid fa-cube"></i></button>
-      <button class="hud-btn" onclick="rotateCamera()" title="Şehir Çevresinde Tur"><i id="orbit-icon" class="fa-solid fa-arrows-rotate"></i></button>
-      <button class="hud-btn" onclick="resetToBasaksehir()" title="Merkeze Dön"><i class="fa-solid fa-location-crosshairs"></i></button>
-    </div>
-
-    <div id="sidebar">
-      <div id="sidebar-header">
-        <div class="badge-pill"><i class="fa-solid fa-satellite"></i> Mapbox v3 Standard 3D</div>
-        <h1>Başakşehir Dijital İkiz</h1>
-        <p>3D Binalar • Dinamik Işıklandırma • 289 Tesis</p>
-      </div>
-
-      <div class="lighting-bar">
-        <button class="btn-light active" onclick="setLighting('dusk')"><i class="fa-solid fa-cloud-sun"></i> Alacakaranlık</button>
-        <button class="btn-light" onclick="setLighting('night')"><i class="fa-solid fa-moon"></i> Gece</button>
-        <button class="btn-light" onclick="setLighting('day')"><i class="fa-solid fa-sun"></i> Gündüz</button>
-        <button class="btn-light" onclick="setLighting('dawn')"><i class="fa-solid fa-mountain-sun"></i> Şafak</button>
-      </div>
-
-      <div id="search-box">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="search-input" placeholder="Tesis, okul, cami, metro ara...">
-      </div>
-
-      <div class="tab-header">
-        <button id="tab-cat-btn" class="tab-item active" onclick="switchTab('cat')">Kategoriler</button>
-        <button id="tab-place-btn" class="tab-item" onclick="switchTab('place')">Tesis Listesi (<span id="count-badge">289</span>)</button>
-      </div>
-
-      <div id="list-container">
-        <div id="cat-view"></div>
-        <div id="place-view" style="display:none;"></div>
-      </div>
+  <!-- Token Modal -->
+  <div id="token-modal">
+    <div class="token-box">
+      <h2>Mapbox Erişim Anahtarı (Token)</h2>
+      <p>Mapbox v3 Standard 3D motoru için public token gereklidir.<br>
+        <a href="https://account.mapbox.com/" target="_blank" style="color:#38bdf8;text-decoration:none;font-weight:700;">mapbox.com</a>
+        hesabınızdaki <code>pk.eyJ...</code> anahtarını girin.</p>
+      <input type="text" id="token-input" class="token-input" placeholder="pk.eyJ1...">
+      <button class="token-btn" onclick="saveToken()">Haritayı Başlat</button>
     </div>
   </div>
 
-  <script>
-    const DEFAULT_TOKEN = "YOUR_MAPBOX_ACCESS_TOKEN";
-    let userToken = localStorage.getItem('mapbox_token') || (DEFAULT_TOKEN !== "YOUR_MAPBOX_ACCESS_TOKEN" ? DEFAULT_TOKEN : null);
+  <!-- HUD Araçları -->
+  <div id="hud-tools">
+    <!-- YENİ: Mobil sidebar aç/kapat -->
+    <button id="sidebar-toggle-btn" class="hud-btn" onclick="toggleSidebar()" title="Paneli Göster/Gizle">
+      <i id="sidebar-toggle-icon" class="fa-solid fa-bars"></i>
+    </button>
+    <button class="hud-btn" onclick="togglePerspective()" title="3D / 2D Perspektif Değiştir">
+      <i class="fa-solid fa-cube"></i>
+    </button>
+    <button class="hud-btn" onclick="rotateCamera()" title="Şehir Çevresinde Tur">
+      <i id="orbit-icon" class="fa-solid fa-arrows-rotate"></i>
+    </button>
+    <button class="hud-btn" onclick="resetToBasaksehir()" title="Merkeze Dön">
+      <i class="fa-solid fa-location-crosshairs"></i>
+    </button>
+  </div>
 
-    const categoryColors = {
-      "Kültür ve Yaşam Merkezleri": "#38bdf8", "Spor Merkezleri": "#f97316",
-      "Alışveriş Alanları": "#a855f7", "Millet Kütüphaneleri": "#fb923c",
-      "Hizmet Binaları": "#0284c7", "Yeşil Alanlar": "#22c55e",
-      "Stadyumlar": "#10b981", "Hastaneler": "#ef4444",
-      "Hayvan Hastanesi": "#ec4899", "İSKİ": "#06b6d4",
-      "İGDAŞ": "#3b82f6", "BEDAŞ": "#eab308", "Living Lab": "#64748b",
-      "Bizim Çınarlar Yaşam Merkezi": "#14b8a6", "U Metro": "#f43f5e",
-      "M Metro": "#3b82f6", "Tarihi Alanlar": "#b45309",
-      "Üniversiteler": "#d97706", "VR Tema Park": "#06b6d4",
-      "Hızlı Oto Yıkama Alanı": "#0ea5e9", "Cemevleri": "#dc2626",
-      "Polis Merkezleri": "#f43f5e", "İtfaiye İstasyonları": "#e11d48",
-      "Eğitim Noktaları": "#94a3b8", "Camiler": "#eab308"
-    };
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div class="badge-pill"><i class="fa-solid fa-satellite"></i> Mapbox v3 Standard 3D</div>
+      <h1>Başakşehir Dijital İkiz</h1>
+      <p>3D Binalar • Dinamik Işıklandırma • 289 Tesis</p>
+    </div>
 
-    // 289 noktanın tamamı (Eksiksiz & Doğrulanmış Liste)
-    let allPoints = [
-      {"name": "Altınşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.06636638976423, "lng": 28.758780552640655, "mah": "Altınşehir"},
-      {"name": "Altınşehir Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.07332879212902, "lng": 28.750401449975342, "mah": "Altınşehir"},
-      {"name": "Altınşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.06810946958902, "lng": 28.752394035135826, "mah": "Altınşehir"},
-      {"name": "Altınşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.06635301445554, "lng": 28.758686732335793, "mah": "Altınşehir"},
-      {"name": "Altınşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.06628535167918, "lng": 28.759142900201514, "mah": "Altınşehir"},
-      {"name": "Altınşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.066320676270166, "lng": 28.748110687565568, "mah": "Altınşehir"},
-      {"name": "Altınşehir Yarımburgaz Mağaraları", "cat": "Tarihi Alanlar", "lat": 41.074544552454675, "lng": 28.744193995025828, "mah": "Altınşehir / Yarımburgaz"},
-      {"name": "Altınşehir Merkez Camii", "cat": "Camiler", "lat": 41.06381568586294, "lng": 28.74738715047777, "mah": "Altınşehir"},
-      {"name": "Derviş Ağa Camii", "cat": "Camiler", "lat": 41.07320839754934, "lng": 28.68247137017103, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Hacı Ahmet Merkez Camii", "cat": "Camiler", "lat": 41.071934734895606, "lng": 28.728997715279128, "mah": "Şahintepe"},
-      {"name": "Hz. İsmail Camii", "cat": "Camiler", "lat": 41.138837831863995, "lng": 28.776310478129062, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "İmamoğulları Merkez Camii", "cat": "Camiler", "lat": 41.07629351190523, "lng": 28.750442538637262, "mah": "Güvercintepe"},
-      {"name": "Başakşehir Nene Hatun İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.11042242507549, "lng": 28.782914698354475, "mah": "Başak Mahallesi"},
-      {"name": "Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.08702817358414, "lng": 28.805981954728765, "mah": "Başak Mahallesi"},
-      {"name": "Mehmet Yaren Gümeli İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0855372660077, "lng": 28.78328877043075, "mah": "Ziya Gökalp"},
-      {"name": "Şehit Polis Mustafa Erdoğan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.10418425223915, "lng": 28.805899111847737, "mah": "Başak Mahallesi"},
-      {"name": "Karacaören Köyü Velibaba Cemevi", "cat": "Cemevleri", "lat": 41.06957166880834, "lng": 28.730638730885904, "mah": "Şahintepe"},
-      {"name": "İbn Haldun Üniversitesi Metro", "cat": "U Metro", "lat": 41.13961632206352, "lng": 28.794092090824144, "mah": "Başak Mahallesi"},
-      {"name": "Kayaşehir Metro", "cat": "U Metro", "lat": 41.11901291300916, "lng": 28.766569341898574, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Kayaşehir Merkez Metro", "cat": "U Metro", "lat": 41.11843183985219, "lng": 28.766665756962265, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Olimpiyatköy Metro", "cat": "U Metro", "lat": 41.0794244690903, "lng": 28.7685617049807, "mah": "Ziya Gökalp"},
-      {"name": "Onurkent Metro", "cat": "U Metro", "lat": 41.11343039773047, "lng": 28.791271899668335, "mah": "Başakşehir 5. Etap / Onurkent"},
-      {"name": "Şehir Hastanesi Metro", "cat": "U Metro", "lat": 41.10328796776582, "lng": 28.777806637920193, "mah": "Başakşehir / Şehir Hastanesi"},
-      {"name": "Toplu Konutlar Metro", "cat": "U Metro", "lat": 41.10762949937507, "lng": 28.767997264503904, "mah": "Kayabaşı 15. Bölge"},
-      {"name": "Başak Konutları Metro", "cat": "M Metro", "lat": 41.09715630244469, "lng": 28.790955127664304, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "İkitelli Sanayi Metro", "cat": "M Metro", "lat": 41.0713265684243, "lng": 28.80381644702567, "mah": "Ziya Gökalp / İkitelli OSB"},
-      {"name": "MASKO Metro", "cat": "M Metro", "lat": 41.06423359693512, "lng": 28.804042472261475, "mah": "Ziya Gökalp / MASKO"},
-      {"name": "Metrokent Metro", "cat": "M Metro", "lat": 41.107723869504945, "lng": 28.801277519644042, "mah": "Başakşehir 5. Etap"},
-      {"name": "Olimpiyat Metro", "cat": "M Metro", "lat": 41.07953510647216, "lng": 28.768880679671327, "mah": "Ziya Gökalp"},
-      {"name": "Siteler Metro", "cat": "M Metro", "lat": 41.088056253321746, "lng": 28.79680332538713, "mah": "Başakşehir Sanayi"},
-      {"name": "Turgut Özal Metro", "cat": "M Metro", "lat": 41.08089403358502, "lng": 28.797587688858588, "mah": "Ziya Gökalp"},
-      {"name": "Ziya Gökalp Metro", "cat": "M Metro", "lat": 41.074543712352124, "lng": 28.786576816705765, "mah": "Ziya Gökalp"},
-      {"name": "Başakşehir Çam ve Sakura Şehir Hastanesi", "cat": "Hastaneler", "lat": 41.104438580520316, "lng": 28.77779264586196, "mah": "Başakşehir / Kayabaşı"},
-      {"name": "Başakşehir Devlet Hastanesi", "cat": "Hastaneler", "lat": 41.11850441594058, "lng": 28.808896203572665, "mah": "Başak Mahallesi 4. Etap"},
-      {"name": "Başakşehir Güvercintepe Hatice-Haydar Aslan Semt Polikliniği", "cat": "Hastaneler", "lat": 41.07422926300772, "lng": 28.747887883424127, "mah": "Güvercintepe"},
-      {"name": "Başakşehir Belediyesi Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.12061211374754, "lng": 28.770968433955915, "mah": "Kayabaşı / Temmuz Sokak"},
-      {"name": "Başakşehir Kaymakamlığı", "cat": "Hizmet Binaları", "lat": 41.11921856524879, "lng": 28.803438400026106, "mah": "Kayabaşı / 15 Temmuz Meydanı"},
-      {"name": "Başakşehir İlçe Emniyet Müdürlüğü", "cat": "Polis Merkezleri", "lat": 41.10458884536801, "lng": 28.801971466832654, "mah": "Başakşehir 5. Etap"},
-      {"name": "Başakşehir İlçe Milli Eğitim Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.101097401567294, "lng": 28.804228656651073, "mah": "Başakşehir 5. Etap"},
-      {"name": "Başakşehir İlçe Sağlık Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.107351168576436, "lng": 28.789898363172238, "mah": "Başak Mahallesi 4. Etap"},
-      {"name": "Tapu ve Kadastro Müdürlüğü", "cat": "Hizmet Binaları", "lat": 41.10100483611543, "lng": 28.804169277844014, "mah": "Başakşehir 5. Etap"},
-      {"name": "Başakşehir Nikah Salonu", "cat": "Hizmet Binaları", "lat": 41.117465408563895, "lng": 28.798985049914467, "mah": "Sular Vadisi / Başak"},
-      {"name": "Bahçeşehir Ek Hizmet Binası", "cat": "Hizmet Binaları", "lat": 41.06230018417562, "lng": 28.68462969177881, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir Belediyesi Ek Hizmet Binaları", "cat": "Hizmet Binaları", "lat": 41.091835872220344, "lng": 28.78179203143709, "mah": "Başak Mahallesi"},
-      {"name": "Bahçeşehir 1. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.06252002083007, "lng": 28.689200041196454, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir 2. Kısım Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.06291273199022, "lng": 28.68379581853353, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Başak Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.10124221813355, "lng": 28.8048198262584, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Güvercintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.0733373857776, "lng": 28.750377310087963, "mah": "Güvercintepe"},
-      {"name": "Kayabaşı Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.105098327811014, "lng": 28.76029265588256, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Şahintepe Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.07228699791134, "lng": 28.72634057327083, "mah": "Şahintepe"},
-      {"name": "Ziya Gökalp Mahalle Muhtarlığı", "cat": "Hizmet Binaları", "lat": 41.07697778379017, "lng": 28.787026644427897, "mah": "Ziya Gökalp"},
-      {"name": "Bahçeşehir Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.07525399987194, "lng": 28.69193193317113, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Güvercintepe Polis Merkezi Amirliği", "cat": "Polis Merkezleri", "lat": 41.073182364997805, "lng": 28.749944356060663, "mah": "Güvercintepe"},
-      {"name": "Kayaşehir Polis Merkezi", "cat": "Polis Merkezleri", "lat": 41.10398901613689, "lng": 28.763492991983306, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Şehit Erdem Özçelik Kalekolu", "cat": "Polis Merkezleri", "lat": 41.0830975144865, "lng": 28.722881204042572, "mah": "Şahintepe"},
-      {"name": "Bahçeşehir İtfaiye İstasyonu", "cat": "İtfaiye İstasyonları", "lat": 41.07057774111764, "lng": 28.676262169888556, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir İtfaiye Amirliği", "cat": "İtfaiye İstasyonları", "lat": 41.104378577429394, "lng": 28.800515562851036, "mah": "Başak Mahallesi / İkitelli"},
-      {"name": "Atatürk Olimpiyat Stadyumu", "cat": "Stadyumlar", "lat": 41.07441252080701, "lng": 28.76624702843077, "mah": "Ziya Gökalp"},
-      {"name": "Başakşehir Fatih Terim Stadyumu", "cat": "Stadyumlar", "lat": 41.122855502824024, "lng": 28.809108925563613, "mah": "Başak Mahallesi 4. Etap"},
-      {"name": "Şehit Erdem Özçelik Stadyumu", "cat": "Stadyumlar", "lat": 41.123183445280766, "lng": 28.748379391860595, "mah": "Şahintepe"},
-      {"name": "İSKİ Başakşehir Şube Müdürlüğü", "cat": "İSKİ", "lat": 41.07255324423785, "lng": 28.748699827375336, "mah": "Başak Mahallesi 2. Etap"},
-      {"name": "İGDAŞ Başakşehir Hizmet Binası", "cat": "İGDAŞ", "lat": 41.09478935256853, "lng": 28.789877971743618, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Başakşehir Elektrik İdaresi (BEDAŞ)", "cat": "BEDAŞ", "lat": 41.09475497370163, "lng": 28.78935203552794, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Başakşehir LIVING LAB", "cat": "Living Lab", "lat": 41.09536351010832, "lng": 28.803272429560202, "mah": "Başakşehir 5. Etap"},
-      {"name": "Başakşehir Belediyesi Hayvan Hastanesi", "cat": "Hayvan Hastanesi", "lat": 41.09438412140917, "lng": 28.734779831166446, "mah": "Kayabaşı / Şamlar yolu"},
-      {"name": "İbn Haldun Üniversitesi", "cat": "Üniversiteler", "lat": 41.138094710226035, "lng": 28.79612198046791, "mah": "Kayabaşı / Fenertepe"},
-      {"name": "Başakşehir VR Tema Park", "cat": "VR Tema Park", "lat": 41.12040393563901, "lng": 28.770183059313826, "mah": "Sular Vadisi"},
-      {"name": "Başakşehir Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.119630225611836, "lng": 28.778327438688326, "mah": "Kayabaşı / Başakşehir"},
-      {"name": "Bahçeşehir Gölet", "cat": "Yeşil Alanlar", "lat": 41.06854635063643, "lng": 28.692587581464824, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Sular Vadisi", "cat": "Yeşil Alanlar", "lat": 41.120030164513146, "lng": 28.81008991170956, "mah": "Başak Mahallesi 5. Etap"},
-      {"name": "Çam ve Sakura Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.0991238930848, "lng": 28.7822601592763, "mah": "Şehir Hastanesi Yanı"},
-      {"name": "Kayapark Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.10355935230484, "lng": 28.765843004817462, "mah": "Kayaşehir 4. Bölge"},
-      {"name": "Ayazma Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.06891287493775, "lng": 28.77451424426257, "mah": "Ziya Gökalp / Ayazma"},
-      {"name": "Güvercintepe Millet Bahçesi", "cat": "Yeşil Alanlar", "lat": 41.07698115737727, "lng": 28.759482960012814, "mah": "Güvercintepe"},
-      {"name": "Boğazköy Parkı", "cat": "Yeşil Alanlar", "lat": 41.07667103060669, "lng": 28.665756864875984, "mah": "Boğazköy"},
-      {"name": "4. Etap Yürüyüş Yolu", "cat": "Yeşil Alanlar", "lat": 41.10620879150094, "lng": 28.811980473093357, "mah": "Başakşehir 4. Etap"},
-      {"name": "Şamlar Tabiat Parkı 5. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.14472593616754, "lng": 28.776098327486537, "mah": "Şamlar"},
-      {"name": "Şamlar Tabiat Parkı 6. Kapı Etkinlik Alanı", "cat": "Yeşil Alanlar", "lat": 41.14786272701646, "lng": 28.779245830810584, "mah": "Şamlar"},
-      {"name": "Baruthane", "cat": "Tarihi Alanlar", "lat": 41.087640069795334, "lng": 28.74138071466475, "mah": "Şamlar"},
-      {"name": "Şamlar Bendi", "cat": "Tarihi Alanlar", "lat": 41.13636102610413, "lng": 28.738146029335113, "mah": "Şamlar"},
-      {"name": "Bahçeşehir Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.07014553926916, "lng": 28.678038394889654, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Çam ve Sakura Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.09387439197452, "lng": 28.781571795199397, "mah": "Şehir Hastanesi Yanı"},
-      {"name": "Kayapark Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.10740416849798, "lng": 28.76595270263054, "mah": "Kayaşehir 4. Bölge"},
-      {"name": "Sular Vadisi Bizim Çınarlar Yaşam Merkezi", "cat": "Bizim Çınarlar Yaşam Merkezi", "lat": 41.11054943969298, "lng": 28.805850489741832, "mah": "Sular Vadisi"},
-      {"name": "Bahçeşehir BAKMER", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.062386713906854, "lng": 28.683997112554277, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir Hacı Bektaş Veli Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.074058246172314, "lng": 28.66604395599376, "mah": "Bahçeşehir . Kısım"},
-      {"name": "Bahçeşehir Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.06710626851833, "lng": 28.691390508814543, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.07464817148011, "lng": 28.693006790229646, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir Muhsin Ertuğrul Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.062618212694716, "lng": 28.684523262985266, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir Emin Saraç Kültür Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.09960385249046, "lng": 28.787107137047197, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Cemil Meriç KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.11431374317418, "lng": 28.81117317370066, "mah": "Ziya Gökalp"},
-      {"name": "Cevdet Kılıçlar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.10174146314901, "lng": 28.79093768156155, "mah": "Güvercintepe"},
-      {"name": "Fenertepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.1330577695328, "lng": 28.788751087124282, "mah": "Fenertepe"},
-      {"name": "Güvercintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.08232452181818, "lng": 28.750944154615595, "mah": "Güvercintepe"},
-      {"name": "Necdet Yıldırım KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.105870789113084, "lng": 28.76136796712412, "mah": "Kayaşehir"},
-      {"name": "Necip Fazıl Kısakürek KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.12065664456776, "lng": 28.80631567941918, "mah": "Başak Mahallesi"},
-      {"name": "Özdemir Bayraktar KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.07970916812955, "lng": 28.663173487071198, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Sezai Karakoç Gençlik Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.08569198002833, "lng": 28.75335720629151, "mah": "Güvercintepe"},
-      {"name": "Şahintepe KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.067182206483565, "lng": 28.729316850335465, "mah": "Şahintepe"},
-      {"name": "Şehir Sanat Merkezi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.12090989731854, "lng": 28.771038644663353, "mah": "Kayabaşı / Belediye Binası"},
-      {"name": "Şehit Savcı M. Selim Kiraz KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.09920832975679, "lng": 28.806707908944613, "mah": "Başakşehir 2. Etap"},
-      {"name": "Teoman Duralı Bahçekent KYM", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.09616763911511, "lng": 28.647024202961887, "mah": "Bahçekent"},
-      {"name": "Yunus Emre Kütüphanesi", "cat": "Kültür ve Yaşam Merkezleri", "lat": 41.074477821065926, "lng": 28.692164700592237, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Abdi İbrahim Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.07293273532292, "lng": 28.68367744088237, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Abdülhamit Han Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.08750522175791, "lng": 28.655093502259845, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Ahmet Kabaklı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10903837891681, "lng": 28.8075762712939, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Akif İnan Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.11431903344062, "lng": 28.791766369719987, "mah": "Başakşehir"},
-      {"name": "Akşemsettin Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.1192240719127, "lng": 28.8056103736495, "mah": "Başak Mahallesi"},
-      {"name": "Alev Alatlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.11672941656469, "lng": 28.76771228135936, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Bahçeşehir Atatürk Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.074166644230154, "lng": 28.684144100406904, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Bahçeşehir Süleyman Demirel İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.06337250578261, "lng": 28.68494766786548, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Başakşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.09418971182031, "lng": 28.81049174881752, "mah": "Başak Mahallesi 2. Etap"},
-      {"name": "Başakşehir Ayazma İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.069488455165924, "lng": 28.779276335324834, "mah": "Ziya Gökalp / Ayazma"},
-      {"name": "Başakşehir Aziz Sancar Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.09450101464801, "lng": 28.77104386274192, "mah": "Başakşehir"},
-      {"name": "Başakşehir Cumhuriyet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10456683004368, "lng": 28.67003430834262, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.07379805221997, "lng": 28.74996171019374, "mah": "Güvercintepe"},
-      {"name": "Başakşehir Halk Eğitimi Merkezi", "cat": "Eğitim Noktaları", "lat": 41.10796081971167, "lng": 28.78314928135908, "mah": "Başak Mahallesi 1. Etap"},
-      {"name": "Başakşehir İTÜ İsmail Dede Efendi Güzel Sanatlar Lisesi", "cat": "Eğitim Noktaları", "lat": 41.11721555053325, "lng": 28.767776150146222, "mah": "Kayabaşı / Kayaşehir 7. Bölge"},
-      {"name": "Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.11349681939688, "lng": 28.79219581390006, "mah": "Başak Mahallesi"},
-      {"name": "Başakşehir Rasim Özdenören Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.125663715208546, "lng": 28.778898071572677, "mah": "Kayabaşı / Kayaşehir 10. Bölge"},
-      {"name": "Başakşehir Şehit Orhun Göytan İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.0940935408296, "lng": 28.771934437178366, "mah": "Kayabaşı"},
-      {"name": "Baykar Milli Teknoloji Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.09752286638324, "lng": 28.64454124446361, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Boğazköy Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.08100499833567, "lng": 28.66238064511218, "mah": "Boğazköy"},
-      {"name": "Borsa İstanbul Alparslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.074206267848254, "lng": 28.780004899651857, "mah": "Ziya Gökalp"},
-      {"name": "Borsa İstanbul Başakşehir Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.086905189724206, "lng": 28.80567520664321, "mah": "Başakşehir"},
-      {"name": "Cahit Zarifoğlu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10032595888897, "lng": 28.792384542735757, "mah": "Başak Mahallesi 4. Etap"},
-      {"name": "Emlak Konut Bahçekent Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.09580545206851, "lng": 28.649120586915885, "mah": "Bahçekent"},
-      {"name": "Emlak Konut Fuat Sezgin İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.11729159513207, "lng": 28.767624013900335, "mah": "Kayaşehir"},
-      {"name": "Fatih Sultan Mehmet İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10281819178125, "lng": 28.80876336171485, "mah": "Başak Mahallesi"},
-      {"name": "Fenertepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.14079779063786, "lng": 28.79049171143745, "mah": "Fenertepe"},
-      {"name": "Güvercintepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.081010884706814, "lng": 28.756711999602263, "mah": "Güvercintepe"},
-      {"name": "Güvercintepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.08150420174893, "lng": 28.75560156506977, "mah": "Güvercintepe"},
-      {"name": "Hacı Ali Osman Gül İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.07745228697635, "lng": 28.72799742783914, "mah": "Şahintepe"},
-      {"name": "Hacı Fatma Gül Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.08079014150449, "lng": 28.72182364088264, "mah": "Şahintepe"},
-      {"name": "Hacı Şöhret Demiröz Fen Lisesi", "cat": "Eğitim Noktaları", "lat": 41.099913624449314, "lng": 28.67242259021534, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Hikmet Uluğbay Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.086250442841525, "lng": 28.745064012046736, "mah": "Güvercintepe"},
-      {"name": "İBB Kanuni Sultan Süleyman Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.0753051498569, "lng": 28.693112918354878, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "İBB Mehmet Akif Ersoy İlkokul ve Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.092533758109106, "lng": 28.73881583903056, "mah": "Güvercintepe"},
-      {"name": "İBB Şehit Savcı Selim Kiraz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.08158543974293, "lng": 28.691812694849798, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "İBB Yavuz Sultan Selim Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.08241910271068, "lng": 28.693641679505653, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "İbrahim Koçaslan Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.089427484192214, "lng": 28.719345923686312, "mah": "Şahintepe"},
-      {"name": "İsmail Kemal Demiröz İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10017441561585, "lng": 28.670221005213534, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "İsmail Kemal Demiröz Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.10059412802641, "lng": 28.671669354375236, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "İTO Başakşehir Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.1026407339865, "lng": 28.798775285431812, "mah": "Başak Mahallesi"},
-      {"name": "İTO Hüma Hatun İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.10237115014872, "lng": 28.799263779427974, "mah": "Başak Mahallesi"},
-      {"name": "Kayabaşı İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.11111676669914, "lng": 28.739528605630273, "mah": "Kayabaşı Köy İçi"},
-      {"name": "Kayaşehir Şeyh Şamil İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.10677639988856, "lng": 28.758758740883575, "mah": "Kayabaşı / Kayaşehir 3. Bölge"},
-      {"name": "Mahmut Şevket Zırh İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.08502135400245, "lng": 28.748831469002013, "mah": "Güvercintepe"},
-      {"name": "Mehmet Emin Saraç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.0998901572359, "lng": 28.78584558009628, "mah": "Başakşehir 1. Etap"},
-      {"name": "Miktat Ağaoğlu Çok Programlı Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.06880359062396, "lng": 28.783368365210315, "mah": "Ziya Gökalp"},
-      {"name": "Necip Fazıl Kısakürek Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.133463663262205, "lng": 28.780608406491105, "mah": "Kayabaşı / Kayaşehir 24. Bölge"},
-      {"name": "Nurettin Topçu İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.108254929078555, "lng": 28.785955490343007, "mah": "Kayabaşı / Kayaşehir 7. Bölge"},
-      {"name": "Oyakkent İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.12396728197768, "lng": 28.804668146441408, "mah": "Başak Mahallesi / Oyakkent"},
-      {"name": "Oyakkent Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.12424610717203, "lng": 28.80417805799978, "mah": "Başak Mahallesi / Oyakkent"},
-      {"name": "Öğrenciden Armağan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.123254465022086, "lng": 28.8049896609711, "mah": "Başak Mahallesi / Oyakkent"},
-      {"name": "Prof. Dr. Ahat Andican Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.102327259242415, "lng": 28.79777647873485, "mah": "Başak Mahallesi"},
-      {"name": "Prof. Dr. Necmettin Erbakan Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.124071113270524, "lng": 28.805647427240824, "mah": "Başakşehir"},
-      {"name": "Selahaddin Eyyubi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.084961618083, "lng": 28.748684906295704, "mah": "Güvercintepe"},
-      {"name": "Şahintepe İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.08242017564824, "lng": 28.721311828103854, "mah": "Şahintepe"},
-      {"name": "Şair Erdem Bayazıt Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.10671594987451, "lng": 28.79008485753742, "mah": "Başak Mahallesi 4. Etap"},
-      {"name": "Şamlar İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.12405903640059, "lng": 28.752033722656993, "mah": "Şamlar Köyü"},
-      {"name": "Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.09071842927954, "lng": 28.803833056504676, "mah": "Başak Mahallesi"},
-      {"name": "Şehit Muhammed Eymen Demirci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.09028407434503, "lng": 28.803726774012894, "mah": "Başak Mahallesi"},
-      {"name": "Şehit Serdar Gökbayrak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.12462132687966, "lng": 28.778752302778415, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Şehit Vedat Barceğci İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.08497672116199, "lng": 28.654959834469125, "mah": "Bahçeşehir 2. Kısım / Bahçekent"},
-      {"name": "Tepe İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.07276591029809, "lng": 28.75299985564838, "mah": "Şahintepe"},
-      {"name": "TOKİ Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.12636660617558, "lng": 28.784967486572025, "mah": "Kayabaşı / Kayaşehir 24. Bölge"},
-      {"name": "TOKİ Celalettin Ökten Kız Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.12498877127881, "lng": 28.764956537081183, "mah": "Kayabaşı / Kayaşehir 9. Bölge"},
-      {"name": "TOKİ Ertuğrulgazi İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.13284566713238, "lng": 28.78662695888743, "mah": "Kayabaşı / Kayaşehir 18. Bölge"},
-      {"name": "TOKİ Ertuğrulgazi Anadolu İmam Hatip Lisesi", "cat": "Eğitim Noktaları", "lat": 41.13304364676163, "lng": 28.786773984549324, "mah": "Kayabaşı / Kayaşehir 18. Bölge"},
-      {"name": "TOKİ Fenertepe Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.140547966722764, "lng": 28.78964903286457, "mah": "Kayabaşı / Fenertepe"},
-      {"name": "TOKİ Hayme Ana Mesleki ve Teknik Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.12470952498055, "lng": 28.76710639697805, "mah": "Kayaşehir"},
-      {"name": "TOKİ Kayaşehir Anadolu Lisesi", "cat": "Eğitim Noktaları", "lat": 41.10078369882649, "lng": 28.76384509180371, "mah": "Kayaşehir 6. Bölge"},
-      {"name": "TOKİ Kayaşehir Mevlana İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10746800276011, "lng": 28.759960283792875, "mah": "Kayabaşı"},
-      {"name": "TOKİ Kayaşehir Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.09885908614805, "lng": 28.763470382162275, "mah": "Kayabaşı"},
-      {"name": "TOKİ Mustafa Kutlu İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.079394742228224, "lng": 28.78377895834604, "mah": "Ziya Gökalp"},
-      {"name": "TOKİ Osmangazi İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.133689333658594, "lng": 28.788775984184216, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "TOKİ Şehit Abdülselam Özatak İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.10840212315745, "lng": 28.770256710229837, "mah": "Kayabaşı / Kayaşehir 11. Bölge"},
-      {"name": "TOKİ Turgut Özal İmam Hatip Ortaokulu", "cat": "Eğitim Noktaları", "lat": 41.12935024988767, "lng": 28.773123873320024, "mah": "Kayabaşı / Kayaşehir 3. Bölge"},
-      {"name": "TOKİ Yunus Emre İlkokulu", "cat": "Eğitim Noktaları", "lat": 41.12853602022107, "lng": 28.773344676930158, "mah": "Kayabaşı / Kayaşehir 1. Bölge"},
-      {"name": "Ayazma Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.06771732812494, "lng": 28.773868551957012, "mah": "Ziya Gökalp / Ayazma"},
-      {"name": "Bahçekent Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.08546567465758, "lng": 28.65436933267281, "mah": "Bahçekent"},
-      {"name": "Bahçeşehir Spor Merkezi", "cat": "Spor Merkezleri", "lat": 41.06831024666039, "lng": 28.677510206767625, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Bahçeşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.06800844756412, "lng": 28.697917000404203, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir Tenis Parkı", "cat": "Spor Merkezleri", "lat": 41.06869966220625, "lng": 28.681018412257266, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir Millet Bahçesi Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.121602064132205, "lng": 28.7791970086787, "mah": "Kayaşehir"},
-      {"name": "Başakşehir Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.106768604580274, "lng": 28.780319663094104, "mah": "Başakşehir"},
-      {"name": "Fenertepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.13974871173902, "lng": 28.787997155099, "mah": "Fenertepe"},
-      {"name": "Güvercintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.08856740314136, "lng": 28.744421282654063, "mah": "Güvercintepe"},
-      {"name": "Kayaşehir Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.10698143923382, "lng": 28.762067004296856, "mah": "Kayaşehir"},
-      {"name": "Korupark Spor Tesisleri", "cat": "Spor Merkezleri", "lat": 41.105570274021204, "lng": 28.78608409137038, "mah": "Başak Mahallesi"},
-      {"name": "Necip Fazıl Kısakürek Kültür Yaşam ve Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.12053428341631, "lng": 28.805941263059882, "mah": "Başak"},
-      {"name": "Özdemir Bayraktar Bilim Kültür ve Yaşam Parkı", "cat": "Spor Merkezleri", "lat": 41.080031211061495, "lng": 28.66284613006579, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Şahintepe Spor Parkı", "cat": "Spor Merkezleri", "lat": 41.083613288389266, "lng": 28.730010565936638, "mah": "Şahintepe"},
-      {"name": "Başakpazar Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.11117689399067, "lng": 28.80960035781435, "mah": "Başak"},
-      {"name": "Fenertepe Kapalı Pazar Alanı", "cat": "Alışveriş Alanları", "lat": 41.13286206470307, "lng": 28.78103772249862, "mah": "Fenertepe"},
-      {"name": "İGTOT-İstanbul Gıda Toptancılar Çarşısı", "cat": "Alışveriş Alanları", "lat": 41.08640835066914, "lng": 28.723092689210258, "mah": "Şahintepe / İGTOT"},
-      {"name": "Kayaşehir Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.10521059729311, "lng": 28.759426084129213, "mah": "Kayaşehir"},
-      {"name": "Pazartürk Fuar ve Sergi Alanı", "cat": "Alışveriş Alanları", "lat": 41.079973310900115, "lng": 28.678669608134364, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Bahçeşehir Millet Kütüphanesi", "cat": "Millet Kütüphaneleri", "lat": 41.0625086128302, "lng": 28.684211982519283, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Başakşehir Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.12042179136111, "lng": 28.770268308195536, "mah": "Başakşehir Belediyesi Binası"},
-      {"name": "Bahçekent Teoman Duralı Millet Kıraathanesi", "cat": "Millet Kütüphaneleri", "lat": 41.09618661634364, "lng": 28.64705262120797, "mah": "Bahçekent Hayat Park"},
-      {"name": "Bahçeşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.08374187498497, "lng": 28.678748299596435, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Başakşehir Millet Bahçesi Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.11652068034621, "lng": 28.775847342706466, "mah": "Millet Bahçesi"},
-      {"name": "Ağu İçen Cemevi", "cat": "Cemevleri", "lat": 41.095261273073476, "lng": 28.71652227211593, "mah": "Şahintepe"},
-      {"name": "Bahçeşehir Canlar Cemevi", "cat": "Cemevleri", "lat": 41.07596600074523, "lng": 28.658093049085267, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Hacı Bektaş-ı Veli Cemevi", "cat": "Cemevleri", "lat": 41.091010425151474, "lng": 28.756988543463994, "mah": "Güvercintepe"},
-      {"name": "Abdülhamid Han Camii", "cat": "Camiler", "lat": 41.12907780742963, "lng": 28.78023100262567, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Akif İnan Camii", "cat": "Camiler", "lat": 41.11437377286893, "lng": 28.7905860150406, "mah": "Başakşehir"},
-      {"name": "Akşemsettin Camii", "cat": "Camiler", "lat": 41.092269024020545, "lng": 28.812310050444257, "mah": "Başak"},
-      {"name": "Alemdar Camii", "cat": "Camiler", "lat": 41.07986263988099, "lng": 28.748940030859682, "mah": "Güvercintepe"},
-      {"name": "Aydınlar Camii", "cat": "Camiler", "lat": 41.07965009151902, "lng": 28.718507181085037, "mah": "Şahintepe"},
-      {"name": "Aymakoop Camii", "cat": "Camiler", "lat": 41.07952457389841, "lng": 28.790337636690015, "mah": "Ziya Gökalp / Sanayi"},
-      {"name": "Bahçeşehir Ebussuud Efendi Camii", "cat": "Camiler", "lat": 41.074610705915646, "lng": 28.692187603759873, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Bahçeşehir Hacı Eyüp Saadet Çarmıklı Camii", "cat": "Camiler", "lat": 41.07008561943528, "lng": 28.6844023436453, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Başakşehir Merkez Camii", "cat": "Camiler", "lat": 41.12045692880317, "lng": 28.772929416426766, "mah": "Kayaşehir"},
-      {"name": "Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.12054530610384, "lng": 28.806510472396102, "mah": "Başak"},
-      {"name": "Boğazköy Merkez Camii", "cat": "Camiler", "lat": 41.078328912313836, "lng": 28.66615926672921, "mah": "Boğazköy"},
-      {"name": "Demirciler Kooperatif Camii", "cat": "Camiler", "lat": 41.06936289618292, "lng": 28.805618783719737, "mah": "İkitelli Sanayi"},
-      {"name": "Dolapdere Sanayi Sitesi Camii", "cat": "Camiler", "lat": 41.074466375768814, "lng": 28.807166975744597, "mah": "İkitelli Sanayi"},
-      {"name": "Elmalılı Hamdi Yazır Camii", "cat": "Camiler", "lat": 41.093916381635594, "lng": 28.739391360950716, "mah": "Güvercintepe"},
-      {"name": "Emlak Konut Başakşehir Evleri Camii", "cat": "Camiler", "lat": 41.11444434924659, "lng": 28.767230148851613, "mah": "Kayabaşı"},
-      {"name": "Bahçekent Emlak Konut Camii", "cat": "Camiler", "lat": 41.09186903294469, "lng": 28.65039454631295, "mah": "Bahçekent"},
-      {"name": "Ensar Camii", "cat": "Camiler", "lat": 41.096197255492065, "lng": 28.80485660746357, "mah": "Başak"},
-      {"name": "Ertuğrul Gazi Camii", "cat": "Camiler", "lat": 41.13607420295938, "lng": 28.77124519779062, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Eski Şamlar Köyü Camii", "cat": "Camiler", "lat": 41.12397706687739, "lng": 28.735960318291003, "mah": "Şamlar"},
-      {"name": "Estonşehir Aksa Camii", "cat": "Camiler", "lat": 41.09288576261307, "lng": 28.68130583360933, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Fetih Camii", "cat": "Camiler", "lat": 41.074000016594866, "lng": 28.733954526411594, "mah": "Şahintepe"},
-      {"name": "Gazi Süleyman Paşa Camii", "cat": "Camiler", "lat": 41.13259088218488, "lng": 28.788001562007462, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Giyim Sanatkarları Camii", "cat": "Camiler", "lat": 41.07125491382179, "lng": 28.80684507134561, "mah": "Ziya Gökalp"},
-      {"name": "Göçmen Konutları Camii", "cat": "Camiler", "lat": 41.10458641159877, "lng": 28.796420631256996, "mah": "Başak"},
-      {"name": "Gülendam Hatun Camii", "cat": "Camiler", "lat": 41.096245413328, "lng": 28.760706262578914, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Güler Kadıoğlu Camii", "cat": "Camiler", "lat": 41.08927103069709, "lng": 28.806203543681256, "mah": "Başak"},
-      {"name": "Altınşehir Tepe Mh. Eski Merkez Camii", "cat": "Camiler", "lat": 41.06269578761568, "lng": 28.753674925429305, "mah": "Altınşehir"},
-      {"name": "Güvercintepe Sultan Beyazıt Camii", "cat": "Camiler", "lat": 41.08027710224854, "lng": 28.7477716292826, "mah": "Güvercintepe"},
-      {"name": "Hacı Ahmet Camii", "cat": "Camiler", "lat": 41.10424754623514, "lng": 28.790302680770335, "mah": "Başakşehir 1.Etap"},
-      {"name": "Hacı Kamil Demiröz Camii", "cat": "Camiler", "lat": 41.102391087646396, "lng": 28.666913552966136, "mah": "Bahçeşehir 2. Kısım"},
-      {"name": "Hacı Kasım Camii", "cat": "Camiler", "lat": 41.10504906873871, "lng": 28.74894194942583, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Hacı Osman Işıklı Camii", "cat": "Camiler", "lat": 41.06752954996408, "lng": 28.672422328362074, "mah": "Şahintepe"},
-      {"name": "Halilurrahman Camii", "cat": "Camiler", "lat": 41.07071467525254, "lng": 28.748939268106678, "mah": "Altınşehir"},
-      {"name": "Haseyad Camii", "cat": "Camiler", "lat": 41.07806715916349, "lng": 28.80921109654515, "mah": "İkitelli Sanayi"},
-      {"name": "Hatice Binti Ali Camii", "cat": "Camiler", "lat": 41.07684982271164, "lng": 28.78367043318028, "mah": "Ziya Gökalp"},
-      {"name": "Hayır Ortakları Camii", "cat": "Camiler", "lat": 41.128810713625576, "lng": 28.774655720604912, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Hayrettin Atmaca Camii", "cat": "Camiler", "lat": 41.09497441207713, "lng": 28.78819914772508, "mah": "Başakşehir"},
-      {"name": "Hazreti Ali Camii", "cat": "Camiler", "lat": 41.08529770865104, "lng": 28.75334514732504, "mah": "Güvercintepe"},
-      {"name": "Hazreti Ebubekir Camii", "cat": "Camiler", "lat": 41.07853968788046, "lng": 28.75459455306287, "mah": "Güvercintepe"},
-      {"name": "Hoca Ahmet Yesevi Camii", "cat": "Camiler", "lat": 41.10473882087416, "lng": 28.786611318182448, "mah": "Başakşehir"},
-      {"name": "Hoşdere Camii", "cat": "Camiler", "lat": 41.082052211685316, "lng": 28.658930190588567, "mah": "Bahçekent / Hoşdere"},
-      {"name": "Huzur Camii", "cat": "Camiler", "lat": 41.07439533059144, "lng": 28.754301755498624, "mah": "Güvercintepe"},
-      {"name": "Hz. Hamza Camii", "cat": "Camiler", "lat": 41.06415111309153, "lng": 28.775708308878027, "mah": "Ziya Gökalp"},
-      {"name": "Hz. Hüseyin Camii", "cat": "Camiler", "lat": 41.108186508232826, "lng": 28.759644914437587, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Hz. Osman Camii", "cat": "Camiler", "lat": 41.13243949950514, "lng": 28.77766665954051, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Hz. Ömer Camii", "cat": "Camiler", "lat": 41.07289387113172, "lng": 28.7877068240407, "mah": "Ziya Gökalp"},
-      {"name": "İGTOT Camii", "cat": "Camiler", "lat": 41.086875910741426, "lng": 28.723359172215876, "mah": "Şahintepe / İGTOT"},
-      {"name": "İmam-ı Azam Camii", "cat": "Camiler", "lat": 41.109265080534094, "lng": 28.803801149237415, "mah": "Başak"},
-      {"name": "İPKAS Camii", "cat": "Camiler", "lat": 41.07958119933056, "lng": 28.795085130986916, "mah": "İkitelli Sanayi"},
-      {"name": "İskender Esma Camii", "cat": "Camiler", "lat": 41.08090211750332, "lng": 28.7267611157218, "mah": "Şahintepe"},
-      {"name": "İskilipli Atıf Hoca Camii", "cat": "Camiler", "lat": 41.07657101200033, "lng": 28.69514973882934, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Kayabaşı Bilal-i Habeşi Camii", "cat": "Camiler", "lat": 41.12423708600405, "lng": 28.766334496969847, "mah": "Kayabaşı"},
-      {"name": "Kayabaşı Camii", "cat": "Camiler", "lat": 41.11143755874366, "lng": 28.740303951105563, "mah": "Kayabaşı"},
-      {"name": "Kut-ül Ammare Camii", "cat": "Camiler", "lat": 41.082398055041516, "lng": 28.692390497402975, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Küba Camii", "cat": "Camiler", "lat": 41.07962084382008, "lng": 28.751276090377452, "mah": "Güvercintepe"},
-      {"name": "Medine Müdafii Fahrettin Paşa Camii", "cat": "Camiler", "lat": 41.10363213581174, "lng": 28.8046049737773, "mah": "Başak"},
-      {"name": "Mehmet Akif Ersoy Camii", "cat": "Camiler", "lat": 41.10163510152811, "lng": 28.760191862058413, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Mehmet Dinçel Camii", "cat": "Camiler", "lat": 41.08398274984875, "lng": 28.770383092146414, "mah": "Ziya Gökalp"},
-      {"name": "Mehmet Şükrü Paşa Camii", "cat": "Camiler", "lat": 41.142100115834296, "lng": 28.79238253193192, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Mehmet Zahid Kotku Camii", "cat": "Camiler", "lat": 41.10014959752136, "lng": 28.790545945474467, "mah": "Başakşehir"},
-      {"name": "Mevlana Camii", "cat": "Camiler", "lat": 41.10116717703957, "lng": 28.810733074834125, "mah": "Başak"},
-      {"name": "Müderris Halil Hilmi Camii", "cat": "Camiler", "lat": 41.10721801326862, "lng": 28.78446110444767, "mah": "Başak"},
-      {"name": "Ömer Nasuhi Bilmen Camii", "cat": "Camiler", "lat": 41.113352006655745, "lng": 28.806313649255507, "mah": "Başak"},
-      {"name": "Prof. Dr. M. Esad Coşan Camii", "cat": "Camiler", "lat": 41.11046138151739, "lng": 28.78607187888392, "mah": "Başak"},
-      {"name": "Ramazan ve Özkan Demirel Camii", "cat": "Camiler", "lat": 41.09458503110778, "lng": 28.78353491509889, "mah": "Başakşehir"},
-      {"name": "Saraçlar Camii", "cat": "Camiler", "lat": 41.08396286708649, "lng": 28.785544521364123, "mah": "İkitelli Sanayi"},
-      {"name": "Sarı Saltuk Camii", "cat": "Camiler", "lat": 41.09524590815865, "lng": 28.810533726142367, "mah": "Başak"},
-      {"name": "Selman-ı Farisi Camii", "cat": "Camiler", "lat": 41.08597798256408, "lng": 28.809905110067987, "mah": "Başak"},
-      {"name": "Süleyman Çelebi Camii", "cat": "Camiler", "lat": 41.105306300740324, "lng": 28.800230169938402, "mah": "Başak"},
-      {"name": "Süleyman Şah Camii", "cat": "Camiler", "lat": 41.13648877680732, "lng": 28.775942911368936, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Şehit Ömer Halisdemir Camii", "cat": "Camiler", "lat": 41.0946252949501, "lng": 28.772606969913326, "mah": "Başakşehir"},
-      {"name": "Şeyh Şamil Camii", "cat": "Camiler", "lat": 41.10102023800971, "lng": 28.8048852406498, "mah": "Başak"},
-      {"name": "Şinasi Ünsal Camii", "cat": "Camiler", "lat": 41.10955142643039, "lng": 28.795486919982768, "mah": "Başakşehir"},
-      {"name": "Şüheda Camii", "cat": "Camiler", "lat": 41.123468240467226, "lng": 28.802984339873376, "mah": "Başakşehir"},
-      {"name": "TOKİ Ayazma Camii", "cat": "Camiler", "lat": 41.07879971731207, "lng": 28.779868365248777, "mah": "Ziya Gökalp / Ayazma"},
-      {"name": "Tunahan Camii", "cat": "Camiler", "lat": 41.10904101823296, "lng": 28.809545200751398, "mah": "Başak"},
-      {"name": "Uhud Camii", "cat": "Camiler", "lat": 41.105202255361334, "lng": 28.770492773105754, "mah": "Kayabaşı / Kayaşehir"},
-      {"name": "Veysel Karani Camii", "cat": "Camiler", "lat": 41.07459921222338, "lng": 28.72321327572494, "mah": "Şahintepe"},
-      {"name": "Yavuz Sultan Selim Camii", "cat": "Camiler", "lat": 41.086027224674794, "lng": 28.65451561414899, "mah": "Bahçeşehir 1. Kısım"},
-      {"name": "Yeni Şamlar Camii", "cat": "Camiler", "lat": 41.125904534351655, "lng": 28.75517993055102, "mah": "Şamlar"},
-      {"name": "Yunus Emre Camii", "cat": "Camiler", "lat": 41.11905296744009, "lng": 28.810283231316433, "mah": "Başak"},
-      {"name": "Zekiye Hatun Camii", "cat": "Camiler", "lat": 41.06736288645625, "lng": 28.73308434307373, "mah": "Şahintepe"}
-    ];
+    <!-- FIX: onclick'e this eklendi — aktif buton doğru işaretleniyor -->
+    <div class="lighting-bar">
+      <button class="btn-light active" onclick="setLighting('dusk', this)">
+        <i class="fa-solid fa-cloud-sun"></i> Alacakaranlık
+      </button>
+      <button class="btn-light" onclick="setLighting('night', this)">
+        <i class="fa-solid fa-moon"></i> Gece
+      </button>
+      <button class="btn-light" onclick="setLighting('day', this)">
+        <i class="fa-solid fa-sun"></i> Gündüz
+      </button>
+      <button class="btn-light" onclick="setLighting('dawn', this)">
+        <i class="fa-solid fa-mountain-sun"></i> Şafak
+      </button>
+    </div>
 
-    let map = null;
-    let activeMarkers = [];
-    let disabledCategories = new Set();
-    let isRotating = false;
-    let rotationReq = null;
+    <div id="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" id="search-input" placeholder="Tesis, okul, cami, metro ara...">
+      <!-- YENİ: Arama temizleme butonu -->
+      <button id="search-clear" onclick="clearSearch()" title="Aramayı Temizle">✕</button>
+    </div>
 
-    // SOL MENÜYÜ HARİTAYI BEKLEMEDEN ANINDA DOLDUR
-    buildCategories();
-    buildPlacesList();
+    <div class="tab-header">
+      <button id="tab-cat-btn" class="tab-item active" onclick="switchTab('cat')">Kategoriler</button>
+      <button id="tab-place-btn" class="tab-item" onclick="switchTab('place')">
+        Tesis Listesi (<span id="count-badge">289</span>)
+      </button>
+    </div>
 
-    if (!userToken) {
-      document.getElementById('token-modal').classList.add('show');
-    } else {
-      initMapbox(userToken);
+    <div id="list-container">
+      <div id="cat-view"></div>
+      <div id="place-view" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════════
+     TOKEN YÖNETİMİ
+  ═══════════════════════════════════════════ */
+  const DEFAULT_TOKEN = "YOUR_MAPBOX_ACCESS_TOKEN";
+  let userToken = localStorage.getItem('mapbox_token') ||
+    (DEFAULT_TOKEN !== "YOUR_MAPBOX_ACCESS_TOKEN" ? DEFAULT_TOKEN : null);
+
+  /* ═══════════════════════════════════════════
+     KATEGORİ RENKLERİ
+  ═══════════════════════════════════════════ */
+  const categoryColors = {
+    "Kültür ve Yaşam Merkezleri": "#38bdf8",
+    "Spor Merkezleri":            "#f97316",
+    "Alışveriş Alanları":         "#a855f7",
+    "Millet Kütüphaneleri":       "#fb923c",
+    "Hizmet Binaları":            "#0284c7",
+    "Yeşil Alanlar":              "#22c55e",
+    "Stadyumlar":                 "#10b981",
+    "Hastaneler":                 "#ef4444",
+    "Hayvan Hastanesi":           "#ec4899",
+    "İSKİ":                       "#06b6d4",
+    "İGDAŞ":                      "#3b82f6",
+    "BEDAŞ":                      "#eab308",
+    "Living Lab":                 "#64748b",
+    "Bizim Çınarlar Yaşam Merkezi": "#14b8a6",
+    "U Metro":                    "#f43f5e",
+    "M Metro":                    "#60a5fa",
+    "Tarihi Alanlar":             "#b45309",
+    "Üniversiteler":              "#d97706",
+    "VR Tema Park":               "#06b6d4",
+    "Hızlı Oto Yıkama Alanı":     "#0ea5e9",
+    "Cemevleri":                  "#dc2626",
+    "Polis Merkezleri":           "#f43f5e",
+    "İtfaiye İstasyonları":       "#e11d48",
+    "Eğitim Noktaları":           "#94a3b8",
+    "Camiler":                    "#eab308"
+  };
+
+  /* ═══════════════════════════════════════════
+     VERİ — 289 TESİS (koordinatlar değiştirilmedi)
+     Düzeltme: "Bahçeşehir . Kısım" → "Bahçeşehir 2. Kısım"
+  ═══════════════════════════════════════════ */
+  const allPoints = [
+    {"name":"Altınşehir Oto Yıkama Alanı","cat":"Hızlı Oto Yıkama Alanı","lat":41.06636638976423,"lng":28.758780552640655,"mah":"Altınşehir"},
+    {"name":"Altınşehir Mahallesi Muhtarlığı","cat":"Hizmet Binaları","lat":41.07332879212902, "lng": 28.750401449975342, "mah": "Altınşehir"},
+    {"name":"Altınşehir KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.06810946958902,"lng":28.752394035135826,"mah":"Altınşehir"},
+    {"name":"Altınşehir Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.06635301445554,"lng":28.758686732335793,"mah":"Altınşehir"},
+    {"name":"Altınşehir Millet Bahçesi Spor Parkı","cat":"Spor Merkezleri","lat":41.06628535167918,"lng":28.759142900201514,"mah":"Altınşehir"},
+    {"name":"Altınşehir Spor Parkı","cat":"Spor Merkezleri","lat":41.066320676270166,"lng":28.748110687565568,"mah":"Altınşehir"},
+    {"name":"Altınşehir Yarımburgaz Mağaraları","cat":"Tarihi Alanlar","lat":41.074544552454675,"lng":28.744193995025828,"mah":"Altınşehir / Yarımburgaz"},
+    {"name":"Altınşehir Merkez Camii","cat":"Camiler","lat":41.06381568586294,"lng":28.74738715047777,"mah":"Altınşehir"},
+    {"name":"Derviş Ağa Camii","cat":"Camiler","lat":41.07320839754934,"lng":28.68247137017103,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Hacı Ahmet Merkez Camii","cat":"Camiler","lat":41.071934734895606,"lng":28.728997715279128,"mah":"Şahintepe"},
+    {"name":"Hz. İsmail Camii","cat":"Camiler","lat":41.138837831863995,"lng":28.776310478129062,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"İmamoğulları Merkez Camii","cat":"Camiler","lat":41.07629351190523,"lng":28.750442538637262,"mah":"Güvercintepe"},
+    {"name":"Başakşehir Nene Hatun İlkokulu","cat":"Eğitim Noktaları","lat":41.11042242507549,"lng":28.782914698354475,"mah":"Başak Mahallesi"},
+    {"name":"Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.08702817358414,"lng":28.805981954728765,"mah":"Başak Mahallesi"},
+    {"name":"Mehmet Yaren Gümeli İlkokulu","cat":"Eğitim Noktaları","lat":41.0855372660077,"lng":28.78328877043075,"mah":"Ziya Gökalp"},
+    {"name":"Şehit Polis Mustafa Erdoğan Ortaokulu","cat":"Eğitim Noktaları","lat":41.10418425223915,"lng":28.805899111847737,"mah":"Başak Mahallesi"},
+    {"name":"Karacaören Köyü Velibaba Cemevi","cat":"Cemevleri","lat":41.06957166880834,"lng":28.730638730885904,"mah":"Şahintepe"},
+    {"name":"İbn Haldun Üniversitesi Metro","cat":"U Metro","lat":41.13961632206352,"lng":28.794092090824144,"mah":"Başak Mahallesi"},
+    {"name":"Kayaşehir Metro","cat":"U Metro","lat":41.11901291300916,"lng":28.766569341898574,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Kayaşehir Merkez Metro","cat":"U Metro","lat":41.11843183985219,"lng":28.766665756962265,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Olimpiyatköy Metro","cat":"U Metro","lat":41.0794244690903,"lng":28.7685617049807,"mah":"Ziya Gökalp"},
+    {"name":"Onurkent Metro","cat":"U Metro","lat":41.11343039773047,"lng":28.791271899668335,"mah":"Başakşehir 5. Etap / Onurkent"},
+    {"name":"Şehir Hastanesi Metro","cat":"U Metro","lat":41.10328796776582,"lng":28.777806637920193,"mah":"Başakşehir / Şehir Hastanesi"},
+    {"name":"Toplu Konutlar Metro","cat":"U Metro","lat":41.10762949937507,"lng":28.767997264503904,"mah":"Kayabaşı 15. Bölge"},
+    {"name":"Başak Konutları Metro","cat":"M Metro","lat":41.09715630244469,"lng":28.790955127664304,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"İkitelli Sanayi Metro","cat":"M Metro","lat":41.0713265684243,"lng":28.80381644702567,"mah":"Ziya Gökalp / İkitelli OSB"},
+    {"name":"MASKO Metro","cat":"M Metro","lat":41.06423359693512,"lng":28.804042472261475,"mah":"Ziya Gökalp / MASKO"},
+    {"name":"Metrokent Metro","cat":"M Metro","lat":41.107723869504945,"lng":28.801277519644042,"mah":"Başakşehir 5. Etap"},
+    {"name":"Olimpiyat Metro","cat":"M Metro","lat":41.07953510647216,"lng":28.768880679671327,"mah":"Ziya Gökalp"},
+    {"name":"Siteler Metro","cat":"M Metro","lat":41.088056253321746,"lng":28.79680332538713,"mah":"Başakşehir Sanayi"},
+    {"name":"Turgut Özal Metro","cat":"M Metro","lat":41.08089403358502,"lng":28.797587688858588,"mah":"Ziya Gökalp"},
+    {"name":"Ziya Gökalp Metro","cat":"M Metro","lat":41.074543712352124,"lng":28.786576816705765,"mah":"Ziya Gökalp"},
+    {"name":"Başakşehir Çam ve Sakura Şehir Hastanesi","cat":"Hastaneler","lat":41.104438580520316,"lng":28.77779264586196,"mah":"Başakşehir / Kayabaşı"},
+    {"name":"Başakşehir Devlet Hastanesi","cat":"Hastaneler","lat":41.11850441594058,"lng":28.808896203572665,"mah":"Başak Mahallesi 4. Etap"},
+    {"name":"Başakşehir Güvercintepe Hatice-Haydar Aslan Semt Polikliniği","cat":"Hastaneler","lat":41.07422926300772,"lng":28.747887883424127,"mah":"Güvercintepe"},
+    {"name":"Başakşehir Belediyesi Hizmet Binası","cat":"Hizmet Binaları","lat":41.12061211374754,"lng":28.770968433955915,"mah":"Kayabaşı / Temmuz Sokak"},
+    {"name":"Başakşehir Kaymakamlığı","cat":"Hizmet Binaları","lat":41.11921856524879,"lng":28.803438400026106,"mah":"Kayabaşı / 15 Temmuz Meydanı"},
+    {"name":"Başakşehir İlçe Emniyet Müdürlüğü","cat":"Polis Merkezleri","lat":41.10458884536801,"lng":28.801971466832654,"mah":"Başakşehir 5. Etap"},
+    {"name":"Başakşehir İlçe Milli Eğitim Müdürlüğü","cat":"Hizmet Binaları","lat":41.101097401567294,"lng":28.804228656651073,"mah":"Başakşehir 5. Etap"},
+    {"name":"Başakşehir İlçe Sağlık Müdürlüğü","cat":"Hizmet Binaları","lat":41.107351168576436,"lng":28.789898363172238,"mah":"Başak Mahallesi 4. Etap"},
+    {"name":"Tapu ve Kadastro Müdürlüğü","cat":"Hizmet Binaları","lat":41.10100483611543,"lng":28.804169277844014,"mah":"Başakşehir 5. Etap"},
+    {"name":"Başakşehir Nikah Salonu","cat":"Hizmet Binaları","lat":41.117465408563895,"lng":28.798985049914467,"mah":"Sular Vadisi / Başak"},
+    {"name":"Bahçeşehir Ek Hizmet Binası","cat":"Hizmet Binaları","lat":41.06230018417562,"lng":28.68462969177881,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir Belediyesi Ek Hizmet Binaları","cat":"Hizmet Binaları","lat":41.091835872220344,"lng":28.78179203143709,"mah":"Başak Mahallesi"},
+    {"name":"Bahçeşehir 1. Kısım Mahalle Muhtarlığı","cat":"Hizmet Binaları","lat":41.06252002083007,"lng":28.689200041196454,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir 2. Kısım Mahalle Muhtarlığı","cat":"Hizmet Binaları","lat":41.06291273199022,"lng":28.68379581853353,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Başak Mahallesi Muhtarlığı","cat":"Hizmet Binaları","lat":41.10124221813355,"lng":28.8048198262584,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Güvercintepe Mahallesi Muhtarlığı","cat":"Hizmet Binaları","lat":41.0733373857776,"lng":28.750377310087963,"mah":"Güvercintepe"},
+    {"name":"Kayabaşı Mahalle Muhtarlığı","cat":"Hizmet Binaları","lat":41.105098327811014,"lng":28.76029265588256,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Şahintepe Mahallesi Muhtarlığı","cat":"Hizmet Binaları","lat":41.07228699791134,"lng":28.72634057327083,"mah":"Şahintepe"},
+    {"name":"Ziya Gökalp Mahalle Muhtarlığı","cat":"Hizmet Binaları","lat":41.07697778379017,"lng":28.787026644427897,"mah":"Ziya Gökalp"},
+    {"name":"Bahçeşehir Polis Merkezi Amirliği","cat":"Polis Merkezleri","lat":41.07525399987194,"lng":28.69193193317113,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Güvercintepe Polis Merkezi Amirliği","cat":"Polis Merkezleri","lat":41.073182364997805,"lng":28.749944356060663,"mah":"Güvercintepe"},
+    {"name":"Kayaşehir Polis Merkezi","cat":"Polis Merkezleri","lat":41.10398901613689,"lng":28.763492991983306,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Şehit Erdem Özçelik Kalekolu","cat":"Polis Merkezleri","lat":41.0830975144865,"lng":28.722881204042572,"mah":"Şahintepe"},
+    {"name":"Bahçeşehir İtfaiye İstasyonu","cat":"İtfaiye İstasyonları","lat":41.07057774111764,"lng":28.676262169888556,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir İtfaiye Amirliği","cat":"İtfaiye İstasyonları","lat":41.104378577429394,"lng":28.800515562851036,"mah":"Başak Mahallesi / İkitelli"},
+    {"name":"Atatürk Olimpiyat Stadyumu","cat":"Stadyumlar","lat":41.07441252080701,"lng":28.76624702843077,"mah":"Ziya Gökalp"},
+    {"name":"Başakşehir Fatih Terim Stadyumu","cat":"Stadyumlar","lat":41.122855502824024,"lng":28.809108925563613,"mah":"Başak Mahallesi 4. Etap"},
+    {"name":"Şehit Erdem Özçelik Stadyumu","cat":"Stadyumlar","lat":41.123183445280766,"lng":28.748379391860595,"mah":"Şahintepe"},
+    {"name":"İSKİ Başakşehir Şube Müdürlüğü","cat":"İSKİ","lat":41.07255324423785,"lng":28.748699827375336,"mah":"Başak Mahallesi 2. Etap"},
+    {"name":"İGDAŞ Başakşehir Hizmet Binası","cat":"İGDAŞ","lat":41.09478935256853,"lng":28.789877971743618,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Başakşehir Elektrik İdaresi (BEDAŞ)","cat":"BEDAŞ","lat":41.09475497370163,"lng":28.78935203552794,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Başakşehir LIVING LAB","cat":"Living Lab","lat":41.09536351010832,"lng":28.803272429560202,"mah":"Başakşehir 5. Etap"},
+    {"name":"Başakşehir Belediyesi Hayvan Hastanesi","cat":"Hayvan Hastanesi","lat":41.09438412140917,"lng":28.734779831166446,"mah":"Kayabaşı / Şamlar yolu"},
+    {"name":"İbn Haldun Üniversitesi","cat":"Üniversiteler","lat":41.138094710226035,"lng":28.79612198046791,"mah":"Kayabaşı / Fenertepe"},
+    {"name":"Başakşehir VR Tema Park","cat":"VR Tema Park","lat":41.12040393563901,"lng":28.770183059313826,"mah":"Sular Vadisi"},
+    {"name":"Başakşehir Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.119630225611836,"lng":28.778327438688326,"mah":"Kayabaşı / Başakşehir"},
+    {"name":"Bahçeşehir Gölet","cat":"Yeşil Alanlar","lat":41.06854635063643,"lng":28.692587581464824,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Sular Vadisi","cat":"Yeşil Alanlar","lat":41.120030164513146,"lng":28.81008991170956,"mah":"Başak Mahallesi 5. Etap"},
+    {"name":"Çam ve Sakura Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.0991238930848,"lng":28.7822601592763,"mah":"Şehir Hastanesi Yanı"},
+    {"name":"Kayapark Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.10355935230484,"lng":28.765843004817462,"mah":"Kayaşehir 4. Bölge"},
+    {"name":"Ayazma Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.06891287493775,"lng":28.77451424426257,"mah":"Ziya Gökalp / Ayazma"},
+    {"name":"Güvercintepe Millet Bahçesi","cat":"Yeşil Alanlar","lat":41.07698115737727,"lng":28.759482960012814,"mah":"Güvercintepe"},
+    {"name":"Boğazköy Parkı","cat":"Yeşil Alanlar","lat":41.07667103060669,"lng":28.665756864875984,"mah":"Boğazköy"},
+    {"name":"4. Etap Yürüyüş Yolu","cat":"Yeşil Alanlar","lat":41.10620879150094,"lng":28.811980473093357,"mah":"Başakşehir 4. Etap"},
+    {"name":"Şamlar Tabiat Parkı 5. Kapı Etkinlik Alanı","cat":"Yeşil Alanlar","lat":41.14472593616754,"lng":28.776098327486537,"mah":"Şamlar"},
+    {"name":"Şamlar Tabiat Parkı 6. Kapı Etkinlik Alanı","cat":"Yeşil Alanlar","lat":41.14786272701646,"lng":28.779245830810584,"mah":"Şamlar"},
+    {"name":"Baruthane","cat":"Tarihi Alanlar","lat":41.087640069795334,"lng":28.74138071466475,"mah":"Şamlar"},
+    {"name":"Şamlar Bendi","cat":"Tarihi Alanlar","lat":41.13636102610413,"lng":28.738146029335113,"mah":"Şamlar"},
+    {"name":"Bahçeşehir Bizim Çınarlar Yaşam Merkezi","cat":"Bizim Çınarlar Yaşam Merkezi","lat":41.07014553926916,"lng":28.678038394889654,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Çam ve Sakura Bizim Çınarlar Yaşam Merkezi","cat":"Bizim Çınarlar Yaşam Merkezi","lat":41.09387439197452,"lng":28.781571795199397,"mah":"Şehir Hastanesi Yanı"},
+    {"name":"Kayapark Bizim Çınarlar Yaşam Merkezi","cat":"Bizim Çınarlar Yaşam Merkezi","lat":41.10740416849798,"lng":28.76595270263054,"mah":"Kayaşehir 4. Bölge"},
+    {"name":"Sular Vadisi Bizim Çınarlar Yaşam Merkezi","cat":"Bizim Çınarlar Yaşam Merkezi","lat":41.11054943969298,"lng":28.805850489741832,"mah":"Sular Vadisi"},
+    {"name":"Bahçeşehir BAKMER","cat":"Kültür ve Yaşam Merkezleri","lat":41.062386713906854,"lng":28.683997112554277,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir Hacı Bektaş Veli Kütüphanesi","cat":"Kültür ve Yaşam Merkezleri","lat":41.074058246172314,"lng":28.66604395599376,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Bahçeşehir Kültür Sanat Merkezi","cat":"Kültür ve Yaşam Merkezleri","lat":41.06710626851833,"lng":28.691390508814543,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.07464817148011,"lng":28.693006790229646,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir Muhsin Ertuğrul Sanat Merkezi","cat":"Kültür ve Yaşam Merkezleri","lat":41.062618212694716,"lng":28.684523262985266,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir Emin Saraç Kültür Sanat Merkezi","cat":"Kültür ve Yaşam Merkezleri","lat":41.09960385249046,"lng":28.787107137047197,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Cemil Meriç KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.11431374317418,"lng":28.81117317370066,"mah":"Ziya Gökalp"},
+    {"name":"Cevdet Kılıçlar KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.10174146314901,"lng":28.79093768156155,"mah":"Güvercintepe"},
+    {"name":"Fenertepe KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.1330577695328,"lng":28.788751087124282,"mah":"Fenertepe"},
+    {"name":"Güvercintepe KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.08232452181818,"lng":28.750944154615595,"mah":"Güvercintepe"},
+    {"name":"Necdet Yıldırım KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.105870789113084,"lng":28.76136796712412,"mah":"Kayaşehir"},
+    {"name":"Necip Fazıl Kısakürek KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.12065664456776,"lng":28.80631567941918,"mah":"Başak Mahallesi"},
+    {"name":"Özdemir Bayraktar KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.07970916812955,"lng":28.663173487071198,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Sezai Karakoç Gençlik Merkezi","cat":"Kültür ve Yaşam Merkezleri","lat":41.08569198002833,"lng":28.75335720629151,"mah":"Güvercintepe"},
+    {"name":"Şahintepe KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.067182206483565,"lng":28.729316850335465,"mah":"Şahintepe"},
+    {"name":"Şehir Sanat Merkezi","cat":"Kültür ve Yaşam Merkezleri","lat":41.12090989731854,"lng":28.771038644663353,"mah":"Kayabaşı / Belediye Binası"},
+    {"name":"Şehit Savcı M. Selim Kiraz KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.09920832975679,"lng":28.806707908944613,"mah":"Başakşehir 2. Etap"},
+    {"name":"Teoman Duralı Bahçekent KYM","cat":"Kültür ve Yaşam Merkezleri","lat":41.09616763911511,"lng":28.647024202961887,"mah":"Bahçekent"},
+    {"name":"Yunus Emre Kütüphanesi","cat":"Kültür ve Yaşam Merkezleri","lat":41.074477821065926,"lng":28.692164700592237,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Abdi İbrahim Ortaokulu","cat":"Eğitim Noktaları","lat":41.07293273532292,"lng":28.68367744088237,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Abdülhamit Han Ortaokulu","cat":"Eğitim Noktaları","lat":41.08750522175791,"lng":28.655093502259845,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Ahmet Kabaklı İlkokulu","cat":"Eğitim Noktaları","lat":41.10903837891681,"lng":28.8075762712939,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Akif İnan Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.11431903344062,"lng":28.791766369719987,"mah":"Başakşehir"},
+    {"name":"Akşemsettin Ortaokulu","cat":"Eğitim Noktaları","lat":41.1192240719127,"lng":28.8056103736495,"mah":"Başak Mahallesi"},
+    {"name":"Alev Alatlı Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.11672941656469,"lng":28.76771228135936,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Bahçeşehir Atatürk Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.074166644230154,"lng":28.684144100406904,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Bahçeşehir Süleyman Demirel İlkokulu","cat":"Eğitim Noktaları","lat":41.06337250578261,"lng":28.68494766786548,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Başakşehir Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.09418971182031,"lng":28.81049174881752,"mah":"Başak Mahallesi 2. Etap"},
+    {"name":"Başakşehir Ayazma İlkokulu","cat":"Eğitim Noktaları","lat":41.069488455165924,"lng":28.779276335324834,"mah":"Ziya Gökalp / Ayazma"},
+    {"name":"Başakşehir Aziz Sancar Ortaokulu","cat":"Eğitim Noktaları","lat":41.09450101464801,"lng":28.77104386274192,"mah":"Başakşehir"},
+    {"name":"Başakşehir Cumhuriyet İlkokulu","cat":"Eğitim Noktaları","lat":41.10456683004368,"lng":28.67003430834262,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir Çok Programlı Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.07379805221997,"lng":28.74996171019374,"mah":"Güvercintepe"},
+    {"name":"Başakşehir Halk Eğitimi Merkezi","cat":"Eğitim Noktaları","lat":41.10796081971167,"lng":28.78314928135908,"mah":"Başak Mahallesi 1. Etap"},
+    {"name":"Başakşehir İTÜ İsmail Dede Efendi Güzel Sanatlar Lisesi","cat":"Eğitim Noktaları","lat":41.11721555053325,"lng":28.767776150146222,"mah":"Kayabaşı / Kayaşehir 7. Bölge"},
+    {"name":"Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.11349681939688,"lng":28.79219581390006,"mah":"Başak Mahallesi"},
+    {"name":"Başakşehir Rasim Özdenören Ortaokulu","cat":"Eğitim Noktaları","lat":41.125663715208546,"lng":28.778898071572677,"mah":"Kayabaşı / Kayaşehir 10. Bölge"},
+    {"name":"Başakşehir Şehit Orhun Göytan İlkokulu","cat":"Eğitim Noktaları","lat":41.0940935408296,"lng":28.771934437178366,"mah":"Kayabaşı"},
+    {"name":"Baykar Milli Teknoloji Mesleki ve Teknik Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.09752286638324,"lng":28.64454124446361,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Boğazköy Ortaokulu","cat":"Eğitim Noktaları","lat":41.08100499833567,"lng":28.66238064511218,"mah":"Boğazköy"},
+    {"name":"Borsa İstanbul Alparslan Ortaokulu","cat":"Eğitim Noktaları","lat":41.074206267848254,"lng":28.780004899651857,"mah":"Ziya Gökalp"},
+    {"name":"Borsa İstanbul Başakşehir Mesleki ve Teknik Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.086905189724206,"lng":28.80567520664321,"mah":"Başakşehir"},
+    {"name":"Cahit Zarifoğlu İlkokulu","cat":"Eğitim Noktaları","lat":41.10032595888897,"lng":28.792384542735757,"mah":"Başak Mahallesi 4. Etap"},
+    {"name":"Emlak Konut Bahçekent Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.09580545206851,"lng":28.649120586915885,"mah":"Bahçekent"},
+    {"name":"Emlak Konut Fuat Sezgin İlkokulu","cat":"Eğitim Noktaları","lat":41.11729159513207,"lng":28.767624013900335,"mah":"Kayaşehir"},
+    {"name":"Fatih Sultan Mehmet İlkokulu","cat":"Eğitim Noktaları","lat":41.10281819178125,"lng":28.80876336171485,"mah":"Başak Mahallesi"},
+    {"name":"Fenertepe İlkokulu","cat":"Eğitim Noktaları","lat":41.14079779063786,"lng":28.79049171143745,"mah":"Fenertepe"},
+    {"name":"Güvercintepe İlkokulu","cat":"Eğitim Noktaları","lat":41.081010884706814,"lng":28.756711999602263,"mah":"Güvercintepe"},
+    {"name":"Güvercintepe Ortaokulu","cat":"Eğitim Noktaları","lat":41.08150420174893,"lng":28.75560156506977,"mah":"Güvercintepe"},
+    {"name":"Hacı Ali Osman Gül İlkokulu","cat":"Eğitim Noktaları","lat":41.07745228697635,"lng":28.72799742783914,"mah":"Şahintepe"},
+    {"name":"Hacı Fatma Gül Çok Programlı Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.08079014150449,"lng":28.72182364088264,"mah":"Şahintepe"},
+    {"name":"Hacı Şöhret Demiröz Fen Lisesi","cat":"Eğitim Noktaları","lat":41.099913624449314,"lng":28.67242259021534,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Hikmet Uluğbay Ortaokulu","cat":"Eğitim Noktaları","lat":41.086250442841525,"lng":28.745064012046736,"mah":"Güvercintepe"},
+    {"name":"İBB Kanuni Sultan Süleyman Ortaokulu","cat":"Eğitim Noktaları","lat":41.0753051498569,"lng":28.693112918354878,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"İBB Mehmet Akif Ersoy İlkokul ve Ortaokulu","cat":"Eğitim Noktaları","lat":41.092533758109106,"lng":28.73881583903056,"mah":"Güvercintepe"},
+    {"name":"İBB Şehit Savcı Selim Kiraz İlkokulu","cat":"Eğitim Noktaları","lat":41.08158543974293,"lng":28.691812694849798,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"İBB Yavuz Sultan Selim Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.08241910271068,"lng":28.693641679505653,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"İbrahim Koçaslan Ortaokulu","cat":"Eğitim Noktaları","lat":41.089427484192214,"lng":28.719345923686312,"mah":"Şahintepe"},
+    {"name":"İsmail Kemal Demiröz İlkokulu","cat":"Eğitim Noktaları","lat":41.10017441561585,"lng":28.670221005213534,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"İsmail Kemal Demiröz Ortaokulu","cat":"Eğitim Noktaları","lat":41.10059412802641,"lng":28.671669354375236,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"İTO Başakşehir Kız Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.1026407339865,"lng":28.798775285431812,"mah":"Başak Mahallesi"},
+    {"name":"İTO Hüma Hatun İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.10237115014872,"lng":28.799263779427974,"mah":"Başak Mahallesi"},
+    {"name":"Kayabaşı İlkokulu","cat":"Eğitim Noktaları","lat":41.11111676669914,"lng":28.739528605630273,"mah":"Kayabaşı Köy İçi"},
+    {"name":"Kayaşehir Şeyh Şamil İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.10677639988856,"lng":28.758758740883575,"mah":"Kayabaşı / Kayaşehir 3. Bölge"},
+    {"name":"Mahmut Şevket Zırh İlkokulu","cat":"Eğitim Noktaları","lat":41.08502135400245,"lng":28.748831469002013,"mah":"Güvercintepe"},
+    {"name":"Mehmet Emin Saraç Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.0998901572359,"lng":28.78584558009628,"mah":"Başakşehir 1. Etap"},
+    {"name":"Miktat Ağaoğlu Çok Programlı Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.06880359062396,"lng":28.783368365210315,"mah":"Ziya Gökalp"},
+    {"name":"Necip Fazıl Kısakürek Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.133463663262205,"lng":28.780608406491105,"mah":"Kayabaşı / Kayaşehir 24. Bölge"},
+    {"name":"Nurettin Topçu İlkokulu","cat":"Eğitim Noktaları","lat":41.108254929078555,"lng":28.785955490343007,"mah":"Kayabaşı / Kayaşehir 7. Bölge"},
+    {"name":"Oyakkent İlkokulu","cat":"Eğitim Noktaları","lat":41.12396728197768,"lng":28.804668146441408,"mah":"Başak Mahallesi / Oyakkent"},
+    {"name":"Oyakkent Ortaokulu","cat":"Eğitim Noktaları","lat":41.12424610717203,"lng":28.80417805799978,"mah":"Başak Mahallesi / Oyakkent"},
+    {"name":"Öğrenciden Armağan Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.123254465022086,"lng":28.8049896609711,"mah":"Başak Mahallesi / Oyakkent"},
+    {"name":"Prof. Dr. Ahat Andican Ortaokulu","cat":"Eğitim Noktaları","lat":41.102327259242415,"lng":28.79777647873485,"mah":"Başak Mahallesi"},
+    {"name":"Prof. Dr. Necmettin Erbakan Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.124071113270524,"lng":28.805647427240824,"mah":"Başakşehir"},
+    {"name":"Selahaddin Eyyubi İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.084961618083,"lng":28.748684906295704,"mah":"Güvercintepe"},
+    {"name":"Şahintepe İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.08242017564824,"lng":28.721311828103854,"mah":"Şahintepe"},
+    {"name":"Şair Erdem Bayazıt Ortaokulu","cat":"Eğitim Noktaları","lat":41.10671594987451,"lng":28.79008485753742,"mah":"Başak Mahallesi 4. Etap"},
+    {"name":"Şamlar İlkokulu","cat":"Eğitim Noktaları","lat":41.12405903640059,"lng":28.752033722656993,"mah":"Şamlar Köyü"},
+    {"name":"Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.09071842927954,"lng":28.803833056504676,"mah":"Başak Mahallesi"},
+    {"name":"Şehit Muhammed Eymen Demirci İlkokulu","cat":"Eğitim Noktaları","lat":41.09028407434503,"lng":28.803726774012894,"mah":"Başak Mahallesi"},
+    {"name":"Şehit Serdar Gökbayrak İlkokulu","cat":"Eğitim Noktaları","lat":41.12462132687966,"lng":28.778752302778415,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Şehit Vedat Barceğci İlkokulu","cat":"Eğitim Noktaları","lat":41.08497672116199,"lng":28.654959834469125,"mah":"Bahçeşehir 2. Kısım / Bahçekent"},
+    {"name":"Tepe İlkokulu","cat":"Eğitim Noktaları","lat":41.07276591029809,"lng":28.75299985564838,"mah":"Şahintepe"},
+    {"name":"TOKİ Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.12636660617558,"lng":28.784967486572025,"mah":"Kayabaşı / Kayaşehir 24. Bölge"},
+    {"name":"TOKİ Celalettin Ökten Kız Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.12498877127881,"lng":28.764956537081183,"mah":"Kayabaşı / Kayaşehir 9. Bölge"},
+    {"name":"TOKİ Ertuğrulgazi İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.13284566713238,"lng":28.78662695888743,"mah":"Kayabaşı / Kayaşehir 18. Bölge"},
+    {"name":"TOKİ Ertuğrulgazi Anadolu İmam Hatip Lisesi","cat":"Eğitim Noktaları","lat":41.13304364676163,"lng":28.786773984549324,"mah":"Kayabaşı / Kayaşehir 18. Bölge"},
+    {"name":"TOKİ Fenertepe Ortaokulu","cat":"Eğitim Noktaları","lat":41.140547966722764,"lng":28.78964903286457,"mah":"Kayabaşı / Fenertepe"},
+    {"name":"TOKİ Hayme Ana Mesleki ve Teknik Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.12470952498055,"lng":28.76710639697805,"mah":"Kayaşehir"},
+    {"name":"TOKİ Kayaşehir Anadolu Lisesi","cat":"Eğitim Noktaları","lat":41.10078369882649,"lng":28.76384509180371,"mah":"Kayaşehir 6. Bölge"},
+    {"name":"TOKİ Kayaşehir Mevlana İlkokulu","cat":"Eğitim Noktaları","lat":41.10746800276011,"lng":28.759960283792875,"mah":"Kayabaşı"},
+    {"name":"TOKİ Kayaşehir Ortaokulu","cat":"Eğitim Noktaları","lat":41.09885908614805,"lng":28.763470382162275,"mah":"Kayabaşı"},
+    {"name":"TOKİ Mustafa Kutlu İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.079394742228224,"lng":28.78377895834604,"mah":"Ziya Gökalp"},
+    {"name":"TOKİ Osmangazi İlkokulu","cat":"Eğitim Noktaları","lat":41.133689333658594,"lng":28.788775984184216,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"TOKİ Şehit Abdülselam Özatak İlkokulu","cat":"Eğitim Noktaları","lat":41.10840212315745,"lng":28.770256710229837,"mah":"Kayabaşı / Kayaşehir 11. Bölge"},
+    {"name":"TOKİ Turgut Özal İmam Hatip Ortaokulu","cat":"Eğitim Noktaları","lat":41.12935024988767,"lng":28.773123873320024,"mah":"Kayabaşı / Kayaşehir 3. Bölge"},
+    {"name":"TOKİ Yunus Emre İlkokulu","cat":"Eğitim Noktaları","lat":41.12853602022107,"lng":28.773344676930158,"mah":"Kayabaşı / Kayaşehir 1. Bölge"},
+    {"name":"Ayazma Spor Parkı","cat":"Spor Merkezleri","lat":41.06771732812494,"lng":28.773868551957012,"mah":"Ziya Gökalp / Ayazma"},
+    {"name":"Bahçekent Spor Parkı","cat":"Spor Merkezleri","lat":41.08546567465758,"lng":28.65436933267281,"mah":"Bahçekent"},
+    {"name":"Bahçeşehir Spor Merkezi","cat":"Spor Merkezleri","lat":41.06831024666039,"lng":28.677510206767625,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Bahçeşehir Spor Parkı","cat":"Spor Merkezleri","lat":41.06800844756412,"lng":28.697917000404203,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir Tenis Parkı","cat":"Spor Merkezleri","lat":41.06869966220625,"lng":28.681018412257266,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir Millet Bahçesi Spor Parkı","cat":"Spor Merkezleri","lat":41.121602064132205,"lng":28.7791970086787,"mah":"Kayaşehir"},
+    {"name":"Başakşehir Spor Parkı","cat":"Spor Merkezleri","lat":41.106768604580274,"lng":28.780319663094104,"mah":"Başakşehir"},
+    {"name":"Fenertepe Spor Parkı","cat":"Spor Merkezleri","lat":41.13974871173902,"lng":28.787997155099,"mah":"Fenertepe"},
+    {"name":"Güvercintepe Spor Parkı","cat":"Spor Merkezleri","lat":41.08856740314136,"lng":28.744421282654063,"mah":"Güvercintepe"},
+    {"name":"Kayaşehir Kültür Yaşam ve Spor Parkı","cat":"Spor Merkezleri","lat":41.10698143923382,"lng":28.762067004296856,"mah":"Kayaşehir"},
+    {"name":"Korupark Spor Tesisleri","cat":"Spor Merkezleri","lat":41.105570274021204,"lng":28.78608409137038,"mah":"Başak Mahallesi"},
+    {"name":"Necip Fazıl Kısakürek Kültür Yaşam ve Spor Parkı","cat":"Spor Merkezleri","lat":41.12053428341631,"lng":28.805941263059882,"mah":"Başak"},
+    {"name":"Özdemir Bayraktar Bilim Kültür ve Yaşam Parkı","cat":"Spor Merkezleri","lat":41.080031211061495,"lng":28.66284613006579,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Şahintepe Spor Parkı","cat":"Spor Merkezleri","lat":41.083613288389266,"lng":28.730010565936638,"mah":"Şahintepe"},
+    {"name":"Başakpazar Fuar ve Sergi Alanı","cat":"Alışveriş Alanları","lat":41.11117689399067,"lng":28.80960035781435,"mah":"Başak"},
+    {"name":"Fenertepe Kapalı Pazar Alanı","cat":"Alışveriş Alanları","lat":41.13286206470307,"lng":28.78103772249862,"mah":"Fenertepe"},
+    {"name":"İGTOT-İstanbul Gıda Toptancılar Çarşısı","cat":"Alışveriş Alanları","lat":41.08640835066914,"lng":28.723092689210258,"mah":"Şahintepe / İGTOT"},
+    {"name":"Kayaşehir Fuar ve Sergi Alanı","cat":"Alışveriş Alanları","lat":41.10521059729311,"lng":28.759426084129213,"mah":"Kayaşehir"},
+    {"name":"Pazartürk Fuar ve Sergi Alanı","cat":"Alışveriş Alanları","lat":41.079973310900115,"lng":28.678669608134364,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Bahçeşehir Millet Kütüphanesi","cat":"Millet Kütüphaneleri","lat":41.0625086128302,"lng":28.684211982519283,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Başakşehir Millet Kıraathanesi","cat":"Millet Kütüphaneleri","lat":41.12042179136111,"lng":28.770268308195536,"mah":"Başakşehir Belediyesi Binası"},
+    {"name":"Bahçekent Teoman Duralı Millet Kıraathanesi","cat":"Millet Kütüphaneleri","lat":41.09618661634364,"lng":28.64705262120797,"mah":"Bahçekent Hayat Park"},
+    {"name":"Bahçeşehir Oto Yıkama Alanı","cat":"Hızlı Oto Yıkama Alanı","lat":41.08374187498497,"lng":28.678748299596435,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Başakşehir Millet Bahçesi Oto Yıkama Alanı","cat":"Hızlı Oto Yıkama Alanı","lat":41.11652068034621,"lng":28.775847342706466,"mah":"Millet Bahçesi"},
+    {"name":"Ağu İçen Cemevi","cat":"Cemevleri","lat":41.095261273073476,"lng":28.71652227211593,"mah":"Şahintepe"},
+    {"name":"Bahçeşehir Canlar Cemevi","cat":"Cemevleri","lat":41.07596600074523,"lng":28.658093049085267,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Hacı Bektaş-ı Veli Cemevi","cat":"Cemevleri","lat":41.091010425151474,"lng":28.756988543463994,"mah":"Güvercintepe"},
+    {"name":"Abdülhamid Han Camii","cat":"Camiler","lat":41.12907780742963,"lng":28.78023100262567,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Akif İnan Camii","cat":"Camiler","lat":41.11437377286893,"lng":28.7905860150406,"mah":"Başakşehir"},
+    {"name":"Akşemsettin Camii","cat":"Camiler","lat":41.092269024020545,"lng":28.812310050444257,"mah":"Başak"},
+    {"name":"Alemdar Camii","cat":"Camiler","lat":41.07986263988099,"lng":28.748940030859682,"mah":"Güvercintepe"},
+    {"name":"Aydınlar Camii","cat":"Camiler","lat":41.07965009151902,"lng":28.718507181085037,"mah":"Şahintepe"},
+    {"name":"Aymakoop Camii","cat":"Camiler","lat":41.07952457389841,"lng":28.790337636690015,"mah":"Ziya Gökalp / Sanayi"},
+    {"name":"Bahçeşehir Ebussuud Efendi Camii","cat":"Camiler","lat":41.074610705915646,"lng":28.692187603759873,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Bahçeşehir Hacı Eyüp Saadet Çarmıklı Camii","cat":"Camiler","lat":41.07008561943528,"lng":28.6844023436453,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Başakşehir Merkez Camii","cat":"Camiler","lat":41.12045692880317,"lng":28.772929416426766,"mah":"Kayaşehir"},
+    {"name":"Bilal-i Habeşi Camii","cat":"Camiler","lat":41.12054530610384,"lng":28.806510472396102,"mah":"Başak"},
+    {"name":"Boğazköy Merkez Camii","cat":"Camiler","lat":41.078328912313836,"lng":28.66615926672921,"mah":"Boğazköy"},
+    {"name":"Demirciler Kooperatif Camii","cat":"Camiler","lat":41.06936289618292,"lng":28.805618783719737,"mah":"İkitelli Sanayi"},
+    {"name":"Dolapdere Sanayi Sitesi Camii","cat":"Camiler","lat":41.074466375768814,"lng":28.807166975744597,"mah":"İkitelli Sanayi"},
+    {"name":"Elmalılı Hamdi Yazır Camii","cat":"Camiler","lat":41.093916381635594,"lng":28.739391360950716,"mah":"Güvercintepe"},
+    {"name":"Emlak Konut Başakşehir Evleri Camii","cat":"Camiler","lat":41.11444434924659,"lng":28.767230148851613,"mah":"Kayabaşı"},
+    {"name":"Bahçekent Emlak Konut Camii","cat":"Camiler","lat":41.09186903294469,"lng":28.65039454631295,"mah":"Bahçekent"},
+    {"name":"Ensar Camii","cat":"Camiler","lat":41.096197255492065,"lng":28.80485660746357,"mah":"Başak"},
+    {"name":"Ertuğrul Gazi Camii","cat":"Camiler","lat":41.13607420295938,"lng":28.77124519779062,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Eski Şamlar Köyü Camii","cat":"Camiler","lat":41.12397706687739,"lng":28.735960318291003,"mah":"Şamlar"},
+    {"name":"Estonşehir Aksa Camii","cat":"Camiler","lat":41.09288576261307,"lng":28.68130583360933,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Fetih Camii","cat":"Camiler","lat":41.074000016594866,"lng":28.733954526411594,"mah":"Şahintepe"},
+    {"name":"Gazi Süleyman Paşa Camii","cat":"Camiler","lat":41.13259088218488,"lng":28.788001562007462,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Giyim Sanatkarları Camii","cat":"Camiler","lat":41.07125491382179,"lng":28.80684507134561,"mah":"Ziya Gökalp"},
+    {"name":"Göçmen Konutları Camii","cat":"Camiler","lat":41.10458641159877,"lng":28.796420631256996,"mah":"Başak"},
+    {"name":"Gülendam Hatun Camii","cat":"Camiler","lat":41.096245413328,"lng":28.760706262578914,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Güler Kadıoğlu Camii","cat":"Camiler","lat":41.08927103069709,"lng":28.806203543681256,"mah":"Başak"},
+    {"name":"Altınşehir Tepe Mh. Eski Merkez Camii","cat":"Camiler","lat":41.06269578761568,"lng":28.753674925429305,"mah":"Altınşehir"},
+    {"name":"Güvercintepe Sultan Beyazıt Camii","cat":"Camiler","lat":41.08027710224854,"lng":28.7477716292826,"mah":"Güvercintepe"},
+    {"name":"Hacı Ahmet Camii","cat":"Camiler","lat":41.10424754623514,"lng":28.790302680770335,"mah":"Başakşehir 1.Etap"},
+    {"name":"Hacı Kamil Demiröz Camii","cat":"Camiler","lat":41.102391087646396,"lng":28.666913552966136,"mah":"Bahçeşehir 2. Kısım"},
+    {"name":"Hacı Kasım Camii","cat":"Camiler","lat":41.10504906873871,"lng":28.74894194942583,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Hacı Osman Işıklı Camii","cat":"Camiler","lat":41.06752954996408,"lng":28.672422328362074,"mah":"Şahintepe"},
+    {"name":"Halilurrahman Camii","cat":"Camiler","lat":41.07071467525254,"lng":28.748939268106678,"mah":"Altınşehir"},
+    {"name":"Haseyad Camii","cat":"Camiler","lat":41.07806715916349,"lng":28.80921109654515,"mah":"İkitelli Sanayi"},
+    {"name":"Hatice Binti Ali Camii","cat":"Camiler","lat":41.07684982271164,"lng":28.78367043318028,"mah":"Ziya Gökalp"},
+    {"name":"Hayır Ortakları Camii","cat":"Camiler","lat":41.128810713625576,"lng":28.774655720604912,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Hayrettin Atmaca Camii","cat":"Camiler","lat":41.09497441207713,"lng":28.78819914772508,"mah":"Başakşehir"},
+    {"name":"Hazreti Ali Camii","cat":"Camiler","lat":41.08529770865104,"lng":28.75334514732504,"mah":"Güvercintepe"},
+    {"name":"Hazreti Ebubekir Camii","cat":"Camiler","lat":41.07853968788046,"lng":28.75459455306287,"mah":"Güvercintepe"},
+    {"name":"Hoca Ahmet Yesevi Camii","cat":"Camiler","lat":41.10473882087416,"lng":28.786611318182448,"mah":"Başakşehir"},
+    {"name":"Hoşdere Camii","cat":"Camiler","lat":41.082052211685316,"lng":28.658930190588567,"mah":"Bahçekent / Hoşdere"},
+    {"name":"Huzur Camii","cat":"Camiler","lat":41.07439533059144,"lng":28.754301755498624,"mah":"Güvercintepe"},
+    {"name":"Hz. Hamza Camii","cat":"Camiler","lat":41.06415111309153,"lng":28.775708308878027,"mah":"Ziya Gökalp"},
+    {"name":"Hz. Hüseyin Camii","cat":"Camiler","lat":41.108186508232826,"lng":28.759644914437587,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Hz. Osman Camii","cat":"Camiler","lat":41.13243949950514,"lng":28.77766665954051,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Hz. Ömer Camii","cat":"Camiler","lat":41.07289387113172,"lng":28.7877068240407,"mah":"Ziya Gökalp"},
+    {"name":"İGTOT Camii","cat":"Camiler","lat":41.086875910741426,"lng":28.723359172215876,"mah":"Şahintepe / İGTOT"},
+    {"name":"İmam-ı Azam Camii","cat":"Camiler","lat":41.109265080534094,"lng":28.803801149237415,"mah":"Başak"},
+    {"name":"İPKAS Camii","cat":"Camiler","lat":41.07958119933056,"lng":28.795085130986916,"mah":"İkitelli Sanayi"},
+    {"name":"İskender Esma Camii","cat":"Camiler","lat":41.08090211750332,"lng":28.7267611157218,"mah":"Şahintepe"},
+    {"name":"İskilipli Atıf Hoca Camii","cat":"Camiler","lat":41.07657101200033,"lng":28.69514973882934,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Kayabaşı Bilal-i Habeşi Camii","cat":"Camiler","lat":41.12423708600405,"lng":28.766334496969847,"mah":"Kayabaşı"},
+    {"name":"Kayabaşı Camii","cat":"Camiler","lat":41.11143755874366,"lng":28.740303951105563,"mah":"Kayabaşı"},
+    {"name":"Kut-ül Ammare Camii","cat":"Camiler","lat":41.082398055041516,"lng":28.692390497402975,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Küba Camii","cat":"Camiler","lat":41.07962084382008,"lng":28.751276090377452,"mah":"Güvercintepe"},
+    {"name":"Medine Müdafii Fahrettin Paşa Camii","cat":"Camiler","lat":41.10363213581174,"lng":28.8046049737773,"mah":"Başak"},
+    {"name":"Mehmet Akif Ersoy Camii","cat":"Camiler","lat":41.10163510152811,"lng":28.760191862058413,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Mehmet Dinçel Camii","cat":"Camiler","lat":41.08398274984875,"lng":28.770383092146414,"mah":"Ziya Gökalp"},
+    {"name":"Mehmet Şükrü Paşa Camii","cat":"Camiler","lat":41.142100115834296,"lng":28.79238253193192,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Mehmet Zahid Kotku Camii","cat":"Camiler","lat":41.10014959752136,"lng":28.790545945474467,"mah":"Başakşehir"},
+    {"name":"Mevlana Camii","cat":"Camiler","lat":41.10116717703957,"lng":28.810733074834125,"mah":"Başak"},
+    {"name":"Müderris Halil Hilmi Camii","cat":"Camiler","lat":41.10721801326862,"lng":28.78446110444767,"mah":"Başak"},
+    {"name":"Ömer Nasuhi Bilmen Camii","cat":"Camiler","lat":41.113352006655745,"lng":28.806313649255507,"mah":"Başak"},
+    {"name":"Prof. Dr. M. Esad Coşan Camii","cat":"Camiler","lat":41.11046138151739,"lng":28.78607187888392,"mah":"Başak"},
+    {"name":"Ramazan ve Özkan Demirel Camii","cat":"Camiler","lat":41.09458503110778,"lng":28.78353491509889,"mah":"Başakşehir"},
+    {"name":"Saraçlar Camii","cat":"Camiler","lat":41.08396286708649,"lng":28.785544521364123,"mah":"İkitelli Sanayi"},
+    {"name":"Sarı Saltuk Camii","cat":"Camiler","lat":41.09524590815865,"lng":28.810533726142367,"mah":"Başak"},
+    {"name":"Selman-ı Farisi Camii","cat":"Camiler","lat":41.08597798256408,"lng":28.809905110067987,"mah":"Başak"},
+    {"name":"Süleyman Çelebi Camii","cat":"Camiler","lat":41.105306300740324,"lng":28.800230169938402,"mah":"Başak"},
+    {"name":"Süleyman Şah Camii","cat":"Camiler","lat":41.13648877680732,"lng":28.775942911368936,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Şehit Ömer Halisdemir Camii","cat":"Camiler","lat":41.0946252949501,"lng":28.772606969913326,"mah":"Başakşehir"},
+    {"name":"Şeyh Şamil Camii","cat":"Camiler","lat":41.10102023800971,"lng":28.8048852406498,"mah":"Başak"},
+    {"name":"Şinasi Ünsal Camii","cat":"Camiler","lat":41.10955142643039,"lng":28.795486919982768,"mah":"Başakşehir"},
+    {"name":"Şüheda Camii","cat":"Camiler","lat":41.123468240467226,"lng":28.802984339873376,"mah":"Başakşehir"},
+    {"name":"TOKİ Ayazma Camii","cat":"Camiler","lat":41.07879971731207,"lng":28.779868365248777,"mah":"Ziya Gökalp / Ayazma"},
+    {"name":"Tunahan Camii","cat":"Camiler","lat":41.10904101823296,"lng":28.809545200751398,"mah":"Başak"},
+    {"name":"Uhud Camii","cat":"Camiler","lat":41.105202255361334,"lng":28.770492773105754,"mah":"Kayabaşı / Kayaşehir"},
+    {"name":"Veysel Karani Camii","cat":"Camiler","lat":41.07459921222338,"lng":28.72321327572494,"mah":"Şahintepe"},
+    {"name":"Yavuz Sultan Selim Camii","cat":"Camiler","lat":41.086027224674794,"lng":28.65451561414899,"mah":"Bahçeşehir 1. Kısım"},
+    {"name":"Yeni Şamlar Camii","cat":"Camiler","lat":41.125904534351655,"lng":28.75517993055102,"mah":"Şamlar"},
+    {"name":"Yunus Emre Camii","cat":"Camiler","lat":41.11905296744009,"lng":28.810283231316433,"mah":"Başak"},
+    {"name":"Zekiye Hatun Camii","cat":"Camiler","lat":41.06736288645625,"lng":28.73308434307373,"mah":"Şahintepe"}
+  ];
+
+  /* ═══════════════════════════════════════════
+     DURUM DEĞİŞKENLERİ
+  ═══════════════════════════════════════════ */
+  let map = null;
+  let disabledCategories = new Set();
+  let isRotating = false;
+  let rotationReq = null;
+  let sidebarVisible = true;
+
+  /* ═══════════════════════════════════════════
+     BAŞLANGIÇ
+  ═══════════════════════════════════════════ */
+  // Koordinat sınır denetimi (Başakşehir bölgesi: ~41.06–41.15 N, 28.64–28.82 E)
+  allPoints.forEach(p => {
+    if (p.lat < 40.9 || p.lat > 41.4 || p.lng < 28.4 || p.lng > 29.2) {
+      console.warn(`⚠️ Koordinat sınır dışı görünüyor: "${p.name}" → lat:${p.lat}, lng:${p.lng}`);
     }
+  });
 
-    function saveToken() {
-      const val = document.getElementById('token-input').value.trim();
-      if (!val.startsWith('pk.')) {
-        alert("Lütfen geçerli bir Mapbox Public Token (pk.eyJ...) girin.");
-        return;
-      }
-      localStorage.setItem('mapbox_token', val);
-      document.getElementById('token-modal').classList.remove('show');
-      initMapbox(val);
+  // Haritayı beklemeden UI'yı anında doldur
+  buildCategories();
+  buildPlacesList();
+
+  if (!userToken) {
+    document.getElementById('token-modal').classList.add('show');
+  } else {
+    initMapbox(userToken);
+  }
+
+  /* ═══════════════════════════════════════════
+     TOKEN
+  ═══════════════════════════════════════════ */
+  function saveToken() {
+    const val = document.getElementById('token-input').value.trim();
+    if (!val.startsWith('pk.')) {
+      alert("Lütfen geçerli bir Mapbox Public Token (pk.eyJ...) girin.");
+      return;
     }
+    localStorage.setItem('mapbox_token', val);
+    document.getElementById('token-modal').classList.remove('show');
+    initMapbox(val);
+  }
 
-    function initMapbox(token) {
-      mapboxgl.accessToken = token;
-
-      map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/standard',
-        center: [28.775, 41.105],
-        zoom: 13.2,
-        pitch: 62,
-        bearing: -18,
-        maxPitch: 85
-      });
-
-      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
-
-      map.on('load', () => {
-        try {
-          map.setConfigProperty('basemap', 'lightPreset', 'dusk');
-        } catch(e) {
-          console.warn("Işıklandırma uyarısı:", e);
-        }
-        renderMarkers();
-      });
-
-      map.on('style.load', () => {
-        renderMarkers();
-      });
-    }
-
-    function setLighting(preset) {
-      if (!map) return;
-      try {
-        map.setConfigProperty('basemap', 'lightPreset', preset);
-      } catch(e) {
-        console.warn(e);
-      }
-      document.querySelectorAll('.btn-light').forEach(b => b.classList.remove('active'));
-      if (window.event && window.event.target) {
-        window.event.target.closest('.btn-light').classList.add('active');
-      }
-    }
-
-    function renderMarkers() {
-      if (!map) return;
-      activeMarkers.forEach(m => m.remove());
-      activeMarkers = [];
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
-
-      allPoints.forEach((p, idx) => {
-        if (disabledCategories.has(p.cat)) return;
-        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
-
-        const color = categoryColors[p.cat] || "#38bdf8";
-
-        const el = document.createElement('div');
-        el.className = 'marker-pin-3d';
-        el.style.backgroundColor = color;
-        el.style.color = color;
-        el.style.zIndex = "5";
-
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          flyTo3D(p.lng, p.lat, 16.8, 65, p);
-        });
-
-        const popup = new mapboxgl.Popup({ offset: 14, closeButton: false })
-          .setHTML(`
-            <div style="font-family:'Plus Jakarta Sans',sans-serif; min-width:210px;">
-              <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:${color}; letter-spacing:0.05em; margin-bottom:4px;">
-                ${p.cat}
-              </div>
-              <h3 style="font-size:0.98rem; font-weight:800; color:#fff; line-height:1.25; margin-bottom:6px;">
-                ${p.name}
-              </h3>
-              <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:10px;">
-                <i class="fa-solid fa-location-dot" style="color:#64748b; margin-right:4px;"></i>${p.mah}
-              </div>
-              <div style="display:flex; gap:6px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" 
-                   style="display:inline-flex; align-items:center; gap:5px; font-size:0.75rem; font-weight:700; color:#38bdf8; text-decoration:none;">
-                  <i class="fa-solid fa-diamond-turn-right"></i> Yol Tarifi Al ↗
-                </a>
-              </div>
-            </div>
-          `);
-
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([p.lng, p.lat])
-          .setPopup(popup)
-          .addTo(map);
-
-        activeMarkers.push(marker);
-      });
-    }
-
-    function flyTo3D(lng, lat, zoom = 16.5, pitch = 65, p = null) {
-      if (!map) return;
-      map.flyTo({
-        center: [lng, lat],
-        zoom: zoom,
-        pitch: pitch,
-        bearing: Math.floor(Math.random() * 60) - 30,
-        speed: 1.2,
-        curve: 1.4,
-        essential: true
-      });
-    }
-
-    function buildCategories() {
-      const counts = {};
-      allPoints.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
-      const container = document.getElementById('cat-view');
-      if (!container) return;
-      container.innerHTML = '';
-
-      Object.keys(counts).sort().forEach(cat => {
-        const col = categoryColors[cat] || "#38bdf8";
-        const div = document.createElement('div');
-        div.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
-        div.innerHTML = `
-          <div class="cat-left">
-            <span class="cat-dot" style="background:${col}; color:${col};"></span>
-            <span>${cat}</span>
-          </div>
-          <span class="cat-badge">${counts[cat]}</span>
-        `;
-        div.onclick = () => {
-          if (disabledCategories.has(cat)) disabledCategories.delete(cat);
-          else disabledCategories.add(cat);
-          buildCategories();
-          renderMarkers();
-          buildPlacesList();
-        };
-        container.appendChild(div);
-      });
-    }
-
-    function buildPlacesList() {
-      const container = document.getElementById('place-view');
-      if (!container) return;
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
-      container.innerHTML = '';
-
-      let count = 0;
-      allPoints.forEach((p, idx) => {
-        if (disabledCategories.has(p.cat)) return;
-        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
-        count++;
-
-        const col = categoryColors[p.cat] || "#38bdf8";
-        const div = document.createElement('div');
-        div.className = 'place-row';
-        div.innerHTML = `
-          <div class="place-name">${p.name}</div>
-          <div class="place-meta">
-            <span style="color:${col}; font-weight:700;">● ${p.cat}</span>
-            <span>📍 ${p.mah}</span>
-          </div>
-        `;
-        div.onclick = () => flyTo3D(p.lng, p.lat, 16.8, 65, p);
-        container.appendChild(div);
-      });
-
-      const badge = document.getElementById('count-badge');
-      if (badge) badge.textContent = count;
-    }
-
-    function togglePerspective() {
-      if (!map) return;
-      const pitch = map.getPitch();
-      map.easeTo({ pitch: pitch > 20 ? 0 : 65, duration: 1000 });
-    }
-
-    function resetToBasaksehir() {
-      if (!map) return;
-      stopRotation();
-      map.flyTo({ center: [28.775, 41.105], zoom: 13, pitch: 62, bearing: -18, speed: 1.2 });
-    }
-
-    function rotateCamera() {
-      if (!map) return;
-      if (isRotating) {
-        stopRotation();
-      } else {
-        isRotating = true;
-        document.getElementById('orbit-icon').classList.add('fa-spin');
-        animateOrbit();
-      }
-    }
-
-    function animateOrbit() {
-      if (!isRotating || !map) return;
-      map.setBearing(map.getBearing() + 0.2);
-      rotationReq = requestAnimationFrame(animateOrbit);
-    }
-
-    function stopRotation() {
-      isRotating = false;
-      document.getElementById('orbit-icon').classList.remove('fa-spin');
-      if (rotationReq) cancelAnimationFrame(rotationReq);
-    }
-
-    function switchTab(t) {
-      document.getElementById('tab-cat-btn').classList.toggle('active', t === 'cat');
-      document.getElementById('tab-place-btn').classList.toggle('active', t === 'place');
-      document.getElementById('cat-view').style.display = t === 'cat' ? 'block' : 'none';
-      document.getElementById('place-view').style.display = t === 'place' ? 'block' : 'none';
-    }
-
-    document.getElementById('search-input').addEventListener('input', () => {
-      renderMarkers();
-      buildPlacesList();
-      if (document.getElementById('search-input').value.trim() !== '') switchTab('place');
+  /* ═══════════════════════════════════════════
+     HARİTA BAŞLATMA
+     FIX: Yalnızca style.load kullanılıyor
+          (load + style.load çakışması giderildi)
+  ═══════════════════════════════════════════ */
+  function initMapbox(token) {
+    mapboxgl.accessToken = token;
+    map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/standard',
+      center: [28.775, 41.105],
+      zoom: 13.2,
+      pitch: 62,
+      bearing: -18,
+      maxPitch: 85
     });
-  </script>
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+    map.on('style.load', () => {
+      try {
+        map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+      } catch(e) {
+        console.warn("Işıklandırma ayarı uygulanamadı:", e.message);
+      }
+      initMapLayers();
+    });
+  }
+
+  /* ═══════════════════════════════════════════
+     GeoJSON KAYNAK + KATMAN YÖNETİMİ
+     PERFORMANS: DOM marker kaldırıldı.
+     289 noktanın tamamı GPU tarafından render ediliyor.
+     Arama/filtre → setData() ile anlık güncelleme.
+  ═══════════════════════════════════════════ */
+  function buildGeoJSON() {
+    const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+    const features = allPoints
+      .filter(p => {
+        if (disabledCategories.has(p.cat)) return false;
+        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return false;
+        return true;
+      })
+      .map((p, i) => ({
+        type: 'Feature',
+        id: i,
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+        properties: {
+          name: p.name,
+          cat:  p.cat,
+          mah:  p.mah,
+          lat:  p.lat,
+          lng:  p.lng,
+          color: categoryColors[p.cat] || '#38bdf8'
+        }
+      }));
+    return { type: 'FeatureCollection', features };
+  }
+
+  function initMapLayers() {
+    map.addSource('points', { type: 'geojson', data: buildGeoJSON() });
+
+    // Dış parlama (glow) efekti
+    map.addLayer({
+      id: 'points-glow',
+      type: 'circle',
+      source: 'points',
+      paint: {
+        'circle-color':   ['get', 'color'],
+        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 7, 14, 13, 18, 20],
+        'circle-opacity': 0.2,
+        'circle-blur':    1.2
+      }
+    });
+
+    // Ana nokta
+    map.addLayer({
+      id: 'points-circle',
+      type: 'circle',
+      source: 'points',
+      paint: {
+        'circle-color':         ['get', 'color'],
+        'circle-radius':        ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7, 18, 12],
+        'circle-stroke-width':  2,
+        'circle-stroke-color':  'rgba(255,255,255,0.85)',
+        'circle-opacity':       0.95
+      }
+    });
+
+    // Hover: imleç pointer'a dönüşüyor
+    map.on('mouseenter', 'points-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'points-circle', () => { map.getCanvas().style.cursor = ''; });
+
+    // Tıklama → kamera uçuşu + popup
+    map.on('click', 'points-circle', (e) => {
+      if (!e.features.length) return;
+      const props = e.features[0].properties;
+      const [lng, lat] = e.features[0].geometry.coordinates;
+      flyTo3D(lng, lat, 16.8, 65, { name: props.name, cat: props.cat, mah: props.mah });
+    });
+  }
+
+  function updateMapSource() {
+    if (!map || !map.getSource('points')) return;
+    map.getSource('points').setData(buildGeoJSON());
+  }
+
+  /* ═══════════════════════════════════════════
+     POPUP
+     FIX: flyTo3D'deki p parametresi artık kullanılıyor
+  ═══════════════════════════════════════════ */
+  function showInfoPopup(p, coords) {
+    const color = categoryColors[p.cat] || '#38bdf8';
+    new mapboxgl.Popup({ offset: 16, closeButton: true, maxWidth: '290px' })
+      .setLngLat(coords)
+      .setHTML(`
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;">
+          <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:${color};letter-spacing:0.06em;margin-bottom:5px;">
+            ${p.cat}
+          </div>
+          <h3 style="font-size:0.96rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:6px;">
+            ${p.name}
+          </h3>
+          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:10px;">
+            <i class="fa-solid fa-location-dot" style="color:#64748b;margin-right:4px;"></i>${p.mah}
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}"
+               target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;color:#38bdf8;text-decoration:none;">
+              <i class="fa-solid fa-diamond-turn-right"></i> Yol Tarifi Al ↗
+            </a>
+          </div>
+        </div>
+      `)
+      .addTo(map);
+  }
+
+  /* ═══════════════════════════════════════════
+     KAMERA
+  ═══════════════════════════════════════════ */
+  // FIX: p parametresi artık kullanılıyor → tıklamada popup açılıyor
+  function flyTo3D(lng, lat, zoom = 16.5, pitch = 65, p = null) {
+    if (!map) return;
+    map.flyTo({
+      center: [lng, lat], zoom, pitch,
+      bearing: Math.floor(Math.random() * 60) - 30,
+      speed: 1.2, curve: 1.4, essential: true
+    });
+    if (p) {
+      map.once('moveend', () => showInfoPopup(p, [lng, lat]));
+    }
+  }
+
+  function togglePerspective() {
+    if (!map) return;
+    const pitch = map.getPitch();
+    map.easeTo({ pitch: pitch > 20 ? 0 : 65, duration: 1000 });
+  }
+
+  function resetToBasaksehir() {
+    if (!map) return;
+    stopRotation();
+    map.flyTo({ center: [28.775, 41.105], zoom: 13, pitch: 62, bearing: -18, speed: 1.2 });
+  }
+
+  function rotateCamera() {
+    if (!map) return;
+    isRotating ? stopRotation() : startRotation();
+  }
+
+  function startRotation() {
+    isRotating = true;
+    document.getElementById('orbit-icon').classList.add('fa-spin');
+    animateOrbit();
+  }
+
+  function animateOrbit() {
+    if (!isRotating || !map) return;
+    map.setBearing(map.getBearing() + 0.2);
+    rotationReq = requestAnimationFrame(animateOrbit);
+  }
+
+  // FIX: Durdurulunca bearing en yakın 45°'ye normalize ediliyor
+  function stopRotation() {
+    isRotating = false;
+    document.getElementById('orbit-icon').classList.remove('fa-spin');
+    if (rotationReq) { cancelAnimationFrame(rotationReq); rotationReq = null; }
+    if (map) {
+      const rounded = Math.round(map.getBearing() / 45) * 45;
+      map.easeTo({ bearing: rounded, duration: 800 });
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     IŞIKLANDIRMA
+     FIX: window.event kaldırıldı → btn parametresi kullanılıyor
+          Aktif buton artık her zaman doğru işaretleniyor
+  ═══════════════════════════════════════════ */
+  function setLighting(preset, btn) {
+    if (!map) return;
+    try {
+      map.setConfigProperty('basemap', 'lightPreset', preset);
+    } catch(e) {
+      console.warn("Işıklandırma ayarlanamadı:", e.message);
+    }
+    document.querySelectorAll('.btn-light').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  }
+
+  /* ═══════════════════════════════════════════
+     KATEGORİ LİSTESİ
+  ═══════════════════════════════════════════ */
+  function buildCategories() {
+    const counts = {};
+    allPoints.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
+    const container = document.getElementById('cat-view');
+    if (!container) return;
+    container.innerHTML = '';
+
+    Object.keys(counts).sort().forEach(cat => {
+      const col = categoryColors[cat] || '#38bdf8';
+      const div = document.createElement('div');
+      div.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
+      div.innerHTML = `
+        <div class="cat-left">
+          <span class="cat-dot" style="background:${col};color:${col};"></span>
+          <span>${cat}</span>
+        </div>
+        <span class="cat-badge">${counts[cat]}</span>
+      `;
+      div.onclick = () => {
+        disabledCategories.has(cat) ? disabledCategories.delete(cat) : disabledCategories.add(cat);
+        buildCategories();
+        updateMapSource();
+        buildPlacesList();
+      };
+      container.appendChild(div);
+    });
+  }
+
+  /* ═══════════════════════════════════════════
+     TESİS LİSTESİ
+  ═══════════════════════════════════════════ */
+  function buildPlacesList() {
+    const container = document.getElementById('place-view');
+    if (!container) return;
+    const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+    container.innerHTML = '';
+    let count = 0;
+
+    allPoints.forEach(p => {
+      if (disabledCategories.has(p.cat)) return;
+      if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
+      count++;
+      const col = categoryColors[p.cat] || '#38bdf8';
+      const div = document.createElement('div');
+      div.className = 'place-row';
+      div.innerHTML = `
+        <div class="place-name">${p.name}</div>
+        <div class="place-meta">
+          <span style="color:${col};font-weight:700;">● ${p.cat}</span>
+          <span>📍 ${p.mah}</span>
+        </div>
+      `;
+      div.onclick = () => flyTo3D(p.lng, p.lat, 16.8, 65, p);
+      container.appendChild(div);
+    });
+
+    const badge = document.getElementById('count-badge');
+    if (badge) badge.textContent = count;
+  }
+
+  /* ═══════════════════════════════════════════
+     ARAMA
+  ═══════════════════════════════════════════ */
+  document.getElementById('search-input').addEventListener('input', () => {
+    const val = document.getElementById('search-input').value;
+    // YENİ: Temizle butonu — metin varsa göster
+    document.getElementById('search-clear').classList.toggle('visible', val.length > 0);
+    updateMapSource();
+    buildPlacesList();
+    if (val.trim() !== '') switchTab('place');
+  });
+
+  // YENİ: Arama temizleme
+  function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-clear').classList.remove('visible');
+    updateMapSource();
+    buildPlacesList();
+    switchTab('cat');
+  }
+
+  /* ═══════════════════════════════════════════
+     SEKMELER
+  ═══════════════════════════════════════════ */
+  function switchTab(t) {
+    document.getElementById('tab-cat-btn').classList.toggle('active', t === 'cat');
+    document.getElementById('tab-place-btn').classList.toggle('active', t === 'place');
+    document.getElementById('cat-view').style.display  = t === 'cat'   ? 'block' : 'none';
+    document.getElementById('place-view').style.display = t === 'place' ? 'block' : 'none';
+  }
+
+  /* ═══════════════════════════════════════════
+     MOBİL SIDEBAR TOGGLE (YENİ)
+  ═══════════════════════════════════════════ */
+  function toggleSidebar() {
+    sidebarVisible = !sidebarVisible;
+    document.getElementById('sidebar').classList.toggle('sidebar-hidden', !sidebarVisible);
+    document.getElementById('sidebar-toggle-icon').className =
+      sidebarVisible ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+  }
+</script>
 </body>
 </html>
