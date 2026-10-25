@@ -334,23 +334,6 @@
     const DEFAULT_TOKEN = "YOUR_MAPBOX_ACCESS_TOKEN";
     let userToken = localStorage.getItem('mapbox_token') || (DEFAULT_TOKEN !== "YOUR_MAPBOX_ACCESS_TOKEN" ? DEFAULT_TOKEN : null);
 
-    if (!userToken) {
-      document.getElementById('token-modal').classList.add('show');
-    } else {
-      initMapbox(userToken);
-    }
-
-    function saveToken() {
-      const val = document.getElementById('token-input').value.trim();
-      if (!val.startsWith('pk.')) {
-        alert("Lütfen geçerli bir Mapbox Public Token (pk.eyJ...) girin.");
-        return;
-      }
-      localStorage.setItem('mapbox_token', val);
-      document.getElementById('token-modal').classList.remove('show');
-      initMapbox(val);
-    }
-
     const categoryColors = {
       "Kültür ve Yaşam Merkezleri": "#38bdf8", "Spor Merkezleri": "#f97316",
       "Alışveriş Alanları": "#a855f7", "Millet Kütüphaneleri": "#fb923c",
@@ -366,7 +349,7 @@
       "Eğitim Noktaları": "#94a3b8", "Camiler": "#eab308"
     };
 
-    // 289 noktanın tamamı ilçe sınırlarına mikro düzeyde kalibre edilmiş liste
+    // 289 noktanın tamamı (Eksiksiz & Doğrulanmış Liste)
     let allPoints = [
       {"name": "Altınşehir Oto Yıkama Alanı", "cat": "Hızlı Oto Yıkama Alanı", "lat": 41.06636638976423, "lng": 28.758780552640655, "mah": "Altınşehir"},
       {"name": "Altınşehir Mahallesi Muhtarlığı", "cat": "Hizmet Binaları", "lat": 40.22568390241603, "lng": 28.918011981683748, "mah": "Altınşehir"},
@@ -665,6 +648,27 @@
     let isRotating = false;
     let rotationReq = null;
 
+    // SOL MENÜYÜ HARİTAYI BEKLEMEDEN ANINDA DOLDUR
+    buildCategories();
+    buildPlacesList();
+
+    if (!userToken) {
+      document.getElementById('token-modal').classList.add('show');
+    } else {
+      initMapbox(userToken);
+    }
+
+    function saveToken() {
+      const val = document.getElementById('token-input').value.trim();
+      if (!val.startsWith('pk.')) {
+        alert("Lütfen geçerli bir Mapbox Public Token (pk.eyJ...) girin.");
+        return;
+      }
+      localStorage.setItem('mapbox_token', val);
+      document.getElementById('token-modal').classList.remove('show');
+      initMapbox(val);
+    }
+
     function initMapbox(token) {
       mapboxgl.accessToken = token;
 
@@ -680,22 +684,35 @@
 
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
 
-      map.on('style.load', () => {
-        map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+      map.on('load', () => {
+        try {
+          map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+        } catch(e) {
+          console.warn("Işıklandırma uyarısı:", e);
+        }
         renderMarkers();
-        buildCategories();
-        buildPlacesList();
+      });
+
+      map.on('style.load', () => {
+        renderMarkers();
       });
     }
 
     function setLighting(preset) {
       if (!map) return;
-      map.setConfigProperty('basemap', 'lightPreset', preset);
+      try {
+        map.setConfigProperty('basemap', 'lightPreset', preset);
+      } catch(e) {
+        console.warn(e);
+      }
       document.querySelectorAll('.btn-light').forEach(b => b.classList.remove('active'));
-      event.target.closest('.btn-light').classList.add('active');
+      if (window.event && window.event.target) {
+        window.event.target.closest('.btn-light').classList.add('active');
+      }
     }
 
     function renderMarkers() {
+      if (!map) return;
       activeMarkers.forEach(m => m.remove());
       activeMarkers = [];
       const query = document.getElementById('search-input').value.toLowerCase().trim();
@@ -710,6 +727,7 @@
         el.className = 'marker-pin-3d';
         el.style.backgroundColor = color;
         el.style.color = color;
+        el.style.zIndex = "5";
 
         el.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -763,6 +781,7 @@
       const counts = {};
       allPoints.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
       const container = document.getElementById('cat-view');
+      if (!container) return;
       container.innerHTML = '';
 
       Object.keys(counts).sort().forEach(cat => {
@@ -789,6 +808,7 @@
 
     function buildPlacesList() {
       const container = document.getElementById('place-view');
+      if (!container) return;
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       container.innerHTML = '';
 
@@ -812,7 +832,8 @@
         container.appendChild(div);
       });
 
-      document.getElementById('count-badge').textContent = count;
+      const badge = document.getElementById('count-badge');
+      if (badge) badge.textContent = count;
     }
 
     function togglePerspective() {
