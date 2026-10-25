@@ -742,30 +742,43 @@
   function initMapLayers() {
     map.addSource('points', { type: 'geojson', data: buildGeoJSON() });
 
-    // Dış parlama (glow) efekti
+    // Katman 1 — Geniş dış parlama halkası
     map.addLayer({
       id: 'points-glow',
       type: 'circle',
       source: 'points',
       paint: {
         'circle-color':   ['get', 'color'],
-        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 7, 14, 13, 18, 20],
-        'circle-opacity': 0.2,
-        'circle-blur':    1.2
+        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 14, 14, 22, 18, 34],
+        'circle-opacity': 0.28,
+        'circle-blur':    1.0
       }
     });
 
-    // Ana nokta
+    // Katman 2 — Orta parlama halkası (neon iç ışık)
+    map.addLayer({
+      id: 'points-mid',
+      type: 'circle',
+      source: 'points',
+      paint: {
+        'circle-color':   ['get', 'color'],
+        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 8, 14, 13, 18, 20],
+        'circle-opacity': 0.45,
+        'circle-blur':    0.6
+      }
+    });
+
+    // Katman 3 — Ana nokta (sert, dolu, parlak)
     map.addLayer({
       id: 'points-circle',
       type: 'circle',
       source: 'points',
       paint: {
-        'circle-color':         ['get', 'color'],
-        'circle-radius':        ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7, 18, 12],
-        'circle-stroke-width':  2,
-        'circle-stroke-color':  'rgba(255,255,255,0.85)',
-        'circle-opacity':       0.95
+        'circle-color':        ['get', 'color'],
+        'circle-radius':       ['interpolate', ['linear'], ['zoom'], 10, 5, 14, 8, 18, 14],
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity':      1
       }
     });
 
