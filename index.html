@@ -743,15 +743,18 @@
     map.addSource('points', { type: 'geojson', data: buildGeoJSON() });
 
     // Katman 1 — Geniş dış parlama halkası
+    // circle-emissive-strength: 1 → Mapbox v3 sahne ışığından BAĞıMSIZ, her zaman tam parlak
     map.addLayer({
       id: 'points-glow',
       type: 'circle',
+      slot: 'top',
       source: 'points',
       paint: {
-        'circle-color':   ['get', 'color'],
-        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 14, 14, 22, 18, 34],
-        'circle-opacity': 0.28,
-        'circle-blur':    1.0
+        'circle-color':             ['get', 'color'],
+        'circle-radius':            ['interpolate', ['linear'], ['zoom'], 10, 16, 14, 26, 18, 40],
+        'circle-opacity':           0.45,
+        'circle-blur':              1.0,
+        'circle-emissive-strength': 1
       }
     });
 
@@ -759,26 +762,31 @@
     map.addLayer({
       id: 'points-mid',
       type: 'circle',
+      slot: 'top',
       source: 'points',
       paint: {
-        'circle-color':   ['get', 'color'],
-        'circle-radius':  ['interpolate', ['linear'], ['zoom'], 10, 8, 14, 13, 18, 20],
-        'circle-opacity': 0.45,
-        'circle-blur':    0.6
+        'circle-color':             ['get', 'color'],
+        'circle-radius':            ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 14, 18, 22],
+        'circle-opacity':           0.65,
+        'circle-blur':              0.5,
+        'circle-emissive-strength': 1
       }
     });
 
-    // Katman 3 — Ana nokta (sert, dolu, parlak)
+    // Katman 3 — Ana nokta (sert, dolu, daima parlak)
     map.addLayer({
       id: 'points-circle',
       type: 'circle',
+      slot: 'top',
       source: 'points',
       paint: {
-        'circle-color':        ['get', 'color'],
-        'circle-radius':       ['interpolate', ['linear'], ['zoom'], 10, 5, 14, 8, 18, 14],
-        'circle-stroke-width': 2.5,
-        'circle-stroke-color': '#ffffff',
-        'circle-opacity':      1
+        'circle-color':             ['get', 'color'],
+        'circle-radius':            ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 9, 18, 15],
+        'circle-stroke-width':      3,
+        'circle-stroke-color':      '#ffffff',
+        'circle-stroke-opacity':    1,
+        'circle-opacity':           1,
+        'circle-emissive-strength': 1
       }
     });
 
