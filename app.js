@@ -31,7 +31,6 @@ const CATEGORY_ALIASES = {
   'sağlık': 'Sağlık',
   'hastaneler': 'Sağlık',
   'hayvan hastanesi': 'Sağlık',
-  'igil': 'Altyapı',
   'igdas': 'Altyapı',
   'i̇gdaş': 'Altyapı',
   'işki': 'Altyapı',
@@ -535,51 +534,85 @@ function initMapLayers() {
   if (!map) return;
 
   if (!map.getSource('points')) {
-    map.addSource('points', { type: 'geojson', data: buildGeoJSON() });
+    map.addSource('points', {
+      type: 'geojson',
+      data: buildGeoJSON(),
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50
+    });
   }
 
-  if (!map.getLayer('points-glow')) {
+  if (!map.getLayer('points-cluster')) {
     map.addLayer({
-      id: 'points-glow',
+      id: 'points-cluster',
       type: 'circle',
-      slot: 'top',
       source: 'points',
+      filter: ['has', 'point_count'],
       paint: {
-        'circle-color': ['get', 'color'],
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 16, 14, 26, 18, 40],
-        'circle-opacity': 0.45,
-        'circle-blur': 1.0,
-        'circle-emissive-strength': 1
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#38bdf8',
+          10,
+          '#22c55e',
+          25,
+          '#f59e0b',
+          50,
+          '#f97316',
+          100,
+          '#ef4444'
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          18,
+          10,
+          22,
+          25,
+          28,
+          50,
+          34,
+          100,
+          40
+        ],
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-opacity': 1,
+        'circle-opacity': 0.9
       }
     });
   }
 
-  if (!map.getLayer('points-mid')) {
+  if (!map.getLayer('points-cluster-count')) {
     map.addLayer({
-      id: 'points-mid',
-      type: 'circle',
-      slot: 'top',
+      id: 'points-cluster-count',
+      type: 'symbol',
       source: 'points',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      },
       paint: {
-        'circle-color': ['get', 'color'],
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 14, 18, 22],
-        'circle-opacity': 0.65,
-        'circle-blur': 0.5,
-        'circle-emissive-strength': 1
+        'text-color': '#ffffff',
+        'text-halo-color': '#0f172a',
+        'text-halo-width': 1.25
       }
     });
   }
 
-  if (!map.getLayer('points-circle')) {
+  if (!map.getLayer('points-point')) {
     map.addLayer({
-      id: 'points-circle',
+      id: 'points-point',
       type: 'circle',
-      slot: 'top',
       source: 'points',
+      filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-color': ['get', 'color'],
         'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 9, 18, 15],
-        'circle-stroke-width': 3,
+        'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
         'circle-stroke-opacity': 1,
         'circle-opacity': 1,
@@ -588,13 +621,45 @@ function initMapLayers() {
     });
   }
 
-  map.on('mouseenter', 'points-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
-  map.on('mouseleave', 'points-circle', () => { map.getCanvas().style.cursor = ''; });
-  map.on('click', 'points-circle', (event) => {
+  map.on('mouseenter', 'points-cluster', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'points-cluster', () => { map.getCanvas().style.cursor = ''; });
+  map.on('mouseenter', 'points-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'points-point', () => { map.getCanvas().style.cursor = ''; });
+
+  map.on('click', 'points-cluster', (event) => {
+    const features = map.queryRenderedFeatures(event.point, { layers: ['points-cluster'] });
+    if (!features.length) return;
+
+    const cluster = features[0];
+    const clusterId = cluster.properties.cluster_id;
+    const source = map.getSource('points');
+
+    if (!source || typeof source.getClusterExpansionZoom !== 'function') return;
+
+    source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+      if (error || zoom === undefined || zoom === null) return;
+
+      const [lng, lat] = cluster.geometry.coordinates;
+      map.easeTo({
+        center: [lng, lat],
+        zoom: Math.min(zoom + 0.6, 17.5),
+        duration: 600
+      });
+    });
+  });
+
+  map.on('click', 'points-point', (event) => {
     if (!event.features.length) return;
-    const props = event.features[0].properties;
-    const [lng, lat] = event.features[0].geometry.coordinates;
-    flyTo3D(lng, lat, 16.8, 65, { name: props.name, cat: props.cat, mah: props.mah });
+    const feature = event.features[0];
+    const [lng, lat] = feature.geometry.coordinates;
+    const point = {
+      name: feature.properties.name,
+      cat: feature.properties.cat,
+      mah: feature.properties.mah,
+      lng,
+      lat
+    };
+    flyTo3D(lng, lat, 16.8, 65, point);
   });
 }
 
