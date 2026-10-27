@@ -129,15 +129,100 @@ async function loadLocations() {
   }
 }
 
-function initUI() {
-  const tokenInput = document.getElementById('token-input');
+function buildCategories() {
+  const counts = {};
+  allPoints.forEach((point) => {
+    counts[point.cat] = (counts[point.cat] || 0) + 1;
+  });
+
+  const container = document.getElementById('cat-view');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  Object.keys(counts).sort().forEach((cat) => {
+    const color = categoryColors[cat] || '#38bdf8';
+    const row = document.createElement('div');
+    row.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
+    row.innerHTML = `
+      <div class="cat-left">
+        <span class="cat-dot" style="background:${color};color:${color};"></span>
+        <span>${cat}</span>
+      </div>
+      <span class="cat-badge">${counts[cat]}</span>
+    `;
+    row.addEventListener('click', () => {
+      if (disabledCategories.has(cat)) {
+        disabledCategories.delete(cat);
+      } else {
+        disabledCategories.add(cat);
+      }
+      buildCategories();
+      updateMapSource();
+      buildPlacesList();
+    });
+    container.appendChild(row);
+  });
+}
+
+function buildPlacesList() {
+  const container = document.getElementById('place-view');
+  if (!container) return;
+
+  const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
+  container.innerHTML = '';
+  let count = 0;
+
+  allPoints.forEach((point) => {
+    if (disabledCategories.has(point.cat)) return;
+
+    const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
+    if (query && !haystack.includes(query)) return;
+
+    count += 1;
+    const color = categoryColors[point.cat] || '#38bdf8';
+    const row = document.createElement('div');
+    row.className = 'place-row';
+    row.innerHTML = `
+      <div class="place-name">${point.name}</div>
+      <div class="place-meta">
+        <span style="color:${color};font-weight:700;">● ${point.cat}</span>
+        <span>📍 ${point.mah}</span>
+      </div>
+    `;
+    row.addEventListener('click', () => flyTo3D(point.lng, point.lat, 16.8, 65, point));
+    container.appendChild(row);
+  });
+
+  const badge = document.getElementById('count-badge');
+  if (badge) badge.textContent = count;
+}
+
+function initializeControls() {
   const searchInput = document.getElementById('search-input');
   const searchClear = document.getElementById('search-clear');
-  const saveButton = document.getElementById('save-token-btn');
+  const tokenInput = document.getElementById('token-input');
+  const saveTokenButton = document.getElementById('save-token-btn');
 
-  searchClear.addEventListener('click', clearSearch);
-  searchInput.addEventListener('input', handleSearchInput);
-  saveButton.addEventListener('click', saveToken);
+  searchInput.addEventListener('input', () => {
+    const value = searchInput.value;
+    searchClear.classList.toggle('visible', value.length > 0);
+    updateMapSource();
+    buildPlacesList();
+    if (normalizeSearchTerm(value) !== '') {
+      switchTab('place');
+    }
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.classList.remove('visible');
+    updateMapSource();
+    buildPlacesList();
+    switchTab('cat');
+  });
+
+  saveTokenButton.addEventListener('click', saveToken);
   tokenInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') saveToken();
   });
@@ -150,62 +235,27 @@ function initUI() {
     button.addEventListener('click', () => switchTab(button.dataset.tab));
   });
 
-  document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
   document.querySelectorAll('[data-action]').forEach((button) => {
     const action = button.dataset.action;
-    if (action === 'togglePerspective') {
-      button.addEventListener('click', togglePerspective);
-    }
-    if (action === 'rotateCamera') {
-      button.addEventListener('click', rotateCamera);
-    }
-    if (action === 'resetToBasaksehir') {
-      button.addEventListener('click', resetToBasaksehir);
-    }
+    if (action === 'togglePerspective') button.addEventListener('click', togglePerspective);
+    if (action === 'rotateCamera') button.addEventListener('click', rotateCamera);
+    if (action === 'resetToBasaksehir') button.addEventListener('click', resetToBasaksehir);
   });
-}
 
-function handleSearchInput() {
-  const input = document.getElementById('search-input');
-  const clearButton = document.getElementById('search-clear');
-  const value = input.value;
-
-  clearButton.classList.toggle('visible', value.length > 0);
-  updateMapSource();
-  buildPlacesList();
-
-  if (normalizeSearchTerm(value) !== '') {
-    switchTab('place');
-  }
-}
-
-function clearSearch() {
-  const input = document.getElementById('search-input');
-  const clearButton = document.getElementById('search-clear');
-
-  input.value = '';
-  clearButton.classList.remove('visible');
-  updateMapSource();
-  buildPlacesList();
-  switchTab('cat');
+  document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
 }
 
 function switchTab(tabName) {
-  const catBtn = document.getElementById('tab-cat-btn');
-  const placeBtn = document.getElementById('tab-place-btn');
+  const isCat = tabName === 'cat';
+  const catButton = document.getElementById('tab-cat-btn');
+  const placeButton = document.getElementById('tab-place-btn');
   const catView = document.getElementById('cat-view');
   const placeView = document.getElementById('place-view');
 
-  const isCat = tabName === 'cat';
-  catBtn.classList.toggle('active', isCat);
-  placeBtn.classList.toggle('active', !isCat);
+  catButton.classList.toggle('active', isCat);
+  placeButton.classList.toggle('active', !isCat);
   catView.style.display = isCat ? 'block' : 'none';
   placeView.style.display = isCat ? 'none' : 'block';
-}
-
-function showTokenModal() {
-  const modal = document.getElementById('token-modal');
-  if (modal) modal.classList.add('show');
 }
 
 function saveToken() {
@@ -221,6 +271,11 @@ function saveToken() {
   userToken = value;
   document.getElementById('token-modal').classList.remove('show');
   initMapbox(value);
+}
+
+function showTokenModal() {
+  const modal = document.getElementById('token-modal');
+  if (modal) modal.classList.add('show');
 }
 
 function initMapbox(token) {
@@ -251,14 +306,11 @@ function initMapbox(token) {
 
 function buildGeoJSON() {
   const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
-
   const features = allPoints
     .filter((point) => {
       if (disabledCategories.has(point.cat)) return false;
       if (!query) return true;
-
-      const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
-      return haystack.includes(query);
+      return normalizeSearchTerm(`${point.name} ${point.mah}`).includes(query);
     })
     .map((point, index) => ({
       type: 'Feature',
@@ -453,75 +505,6 @@ function setLighting(preset, button) {
   if (button) button.classList.add('active');
 }
 
-function buildCategories() {
-  const counts = {};
-  allPoints.forEach((point) => {
-    counts[point.cat] = (counts[point.cat] || 0) + 1;
-  });
-
-  const container = document.getElementById('cat-view');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  Object.keys(counts).sort().forEach((cat) => {
-    const color = categoryColors[cat] || '#38bdf8';
-    const row = document.createElement('div');
-    row.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
-    row.innerHTML = `
-      <div class="cat-left">
-        <span class="cat-dot" style="background:${color};color:${color};"></span>
-        <span>${cat}</span>
-      </div>
-      <span class="cat-badge">${counts[cat]}</span>
-    `;
-    row.addEventListener('click', () => {
-      if (disabledCategories.has(cat)) {
-        disabledCategories.delete(cat);
-      } else {
-        disabledCategories.add(cat);
-      }
-      buildCategories();
-      updateMapSource();
-      buildPlacesList();
-    });
-    container.appendChild(row);
-  });
-}
-
-function buildPlacesList() {
-  const container = document.getElementById('place-view');
-  if (!container) return;
-
-  const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
-  container.innerHTML = '';
-  let count = 0;
-
-  allPoints.forEach((point) => {
-    if (disabledCategories.has(point.cat)) return;
-
-    const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
-    if (query && !haystack.includes(query)) return;
-
-    count += 1;
-    const color = categoryColors[point.cat] || '#38bdf8';
-    const row = document.createElement('div');
-    row.className = 'place-row';
-    row.innerHTML = `
-      <div class="place-name">${point.name}</div>
-      <div class="place-meta">
-        <span style="color:${color};font-weight:700;">● ${point.cat}</span>
-        <span>📍 ${point.mah}</span>
-      </div>
-    `;
-    row.addEventListener('click', () => flyTo3D(point.lng, point.lat, 16.8, 65, point));
-    container.appendChild(row);
-  });
-
-  const badge = document.getElementById('count-badge');
-  if (badge) badge.textContent = count;
-}
-
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
@@ -537,7 +520,9 @@ function toggleSidebar() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  initUI();
+  initializeControls();
+  buildCategories();
+  buildPlacesList();
   await loadLocations();
 
   if (!userToken) {
