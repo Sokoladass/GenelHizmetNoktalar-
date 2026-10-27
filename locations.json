@@ -41,6 +41,226 @@
         "category": "Stadyumlar",
         "mahalle": "Ziya Gökalp"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8085, 41.1238] },
+      "properties": {
+        "id": 101,
+        "name": "Başakşehir Metro İstasyonu",
+        "category": "U Metro",
+        "mahalle": "Kayabaşı"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8183, 41.1096] },
+      "properties": {
+        "id": 102,
+        "name": "M Metro İstasyonu",
+        "category": "M Metro",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7461, 41.0891] },
+      "properties": {
+        "id": 103,
+        "name": "Türk Telekom Başakşehir Şubesi",
+        "category": "Hizmet Binaları",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7836, 41.0894] },
+      "properties": {
+        "id": 104,
+        "name": "Başakşehir Merkez Camii",
+        "category": "Camiler",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7588, 41.0958] },
+      "properties": {
+        "id": 105,
+        "name": "Başakşehir Millet Kütüphanesi",
+        "category": "Millet Kütüphaneleri",
+        "mahalle": "Ziya Gökalp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7709, 41.1165] },
+      "properties": {
+        "id": 106,
+        "name": "Başakşehir 1. Bölge İlkokulu",
+        "category": "Eğitim Noktaları",
+        "mahalle": "Kayabaşı"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7957, 41.0945] },
+      "properties": {
+        "id": 107,
+        "name": "Başakşehir Park ve Yeşil Alan",
+        "category": "Yeşil Alanlar",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8042, 41.0926] },
+      "properties": {
+        "id": 108,
+        "name": "Başakşehir Polis Merkezi",
+        "category": "Polis Merkezleri",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7546, 41.1287] },
+      "properties": {
+        "id": 109,
+        "name": "Kayaşehir 6. Bölge Parkı",
+        "category": "Yeşil Alanlar",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8177, 41.1186] },
+      "properties": {
+        "id": 110,
+        "name": "İtfaiye İstasyonu",
+        "category": "İtfaiye İstasyonları",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7715, 41.0622] },
+      "properties": {
+        "id": 111,
+        "name": "Başakşehir Spor Kompleksi",
+        "category": "Spor Merkezleri",
+        "mahalle": "Ziya Gökalp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7443, 41.1049] },
+      "properties": {
+        "id": 112,
+        "name": "Başakşehir Sağlık Evi",
+        "category": "Hastaneler",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7854, 41.1312] },
+      "properties": {
+        "id": 113,
+        "name": "Kayaşehir Anadolu Üniversitesi Uygulama Merkezi",
+        "category": "Üniversiteler",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7362, 41.0874] },
+      "properties": {
+        "id": 114,
+        "name": "Başakşehir Alışveriş Merkezi",
+        "category": "Alışveriş Alanları",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8236, 41.0877] },
+      "properties": {
+        "id": 115,
+        "name": "Başakşehir Su Arıtma Tesisi",
+        "category": "İSKİ",
+        "mahalle": "Kayabaşı"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7341, 41.1179] },
+      "properties": {
+        "id": 116,
+        "name": "Başakşehir Çocuk Parkı",
+        "category": "Yeşil Alanlar",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7984, 41.0678] },
+      "properties": {
+        "id": 117,
+        "name": "Başakşehir Kültür Merkezi",
+        "category": "Kültür ve Yaşam Merkezleri",
+        "mahalle": "Ziya Gökalp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7812, 41.1247] },
+      "properties": {
+        "id": 118,
+        "name": "Başakşehir Aile Sağlığı Merkezi",
+        "category": "Sağlık",
+        "mahalle": "Kayabaşı"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7528, 41.1413] },
+      "properties": {
+        "id": 119,
+        "name": "Kayaşehir 3. Bölge Eğitim Noktası",
+        "category": "Eğitim Noktaları",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.7633, 41.1366] },
+      "properties": {
+        "id": 120,
+        "name": "Kayaşehir Yaşam Merkezi",
+        "category": "Bizim Çınarlar Yaşam Merkezi",
+        "mahalle": "Kayaşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8102, 41.0811] },
+      "properties": {
+        "id": 121,
+        "name": "Başakşehir Elektrik Dağıtım Merkezi",
+        "category": "BEDAŞ",
+        "mahalle": "Başakşehir"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [28.8261, 41.1117] },
+      "properties": {
+        "id": 122,
+        "name": "Kayaşehir Cami",
+        "category": "Camiler",
+        "mahalle": "Kayaşehir"
+      }
     }
   ]
 }
