@@ -1,31 +1,97 @@
 const DEFAULT_TOKEN = 'YOUR_MAPBOX_ACCESS_TOKEN';
+
 const categoryColors = {
-  'Kültür ve Yaşam Merkezleri': '#38bdf8',
-  'Spor Merkezleri': '#f97316',
-  'Alışveriş Alanları': '#a855f7',
-  'Millet Kütüphaneleri': '#fb923c',
-  'Hizmet Binaları': '#0284c7',
-  'Yeşil Alanlar': '#22c55e',
-  'Stadyumlar': '#10b981',
-  'Hastaneler': '#ef4444',
-  'Hayvan Hastanesi': '#ec4899',
-  'İSKİ': '#06b6d4',
-  'İGDAŞ': '#3b82f6',
-  'BEDAŞ': '#eab308',
-  'Living Lab': '#64748b',
-  'Bizim Çınarlar Yaşam Merkezi': '#14b8a6',
-  'U Metro': '#f43f5e',
-  'M Metro': '#60a5fa',
-  'Tarihi Alanlar': '#b45309',
-  'Üniversiteler': '#d97706',
-  'VR Tema Park': '#06b6d4',
-  'Hızlı Oto Yıkama Alanı': '#0ea5e9',
-  'Cemevleri': '#dc2626',
-  'Polis Merkezleri': '#f43f5e',
-  'İtfaiye İstasyonları': '#e11d48',
-  'Eğitim Noktaları': '#94a3b8',
-  'Camiler': '#eab308'
+  "Sağlık": "#ef4444",
+  "Eğitim": "#f59e0b",
+  "Kültür ve Yaşam": "#38bdf8",
+  "Spor": "#f97316",
+  "Hizmet ve Yönetim": "#0284c7",
+  "Güvenlik": "#f43f5e",
+  "Ulaşım": "#60a5fa",
+  "Açık Alan": "#22c55e",
+  "Enerji ve Altyapı": "#06b6d4",
+  "Tarih ve Kültür Mirası": "#b45309",
+  "Diğer": "#64748b"
 };
+
+const normalizedCategoryMap = {
+  'Kültür ve Yaşam Merkezleri': { category: 'Kültür ve Yaşam', subcategory: 'Kültür Merkezi' },
+  'Spor Merkezleri': { category: 'Spor', subcategory: 'Spor Tesisi' },
+  'Alışveriş Alanları': { category: 'Diğer', subcategory: 'Alışveriş' },
+  'Millet Kütüphaneleri': { category: 'Kültür ve Yaşam', subcategory: 'Kütüphane' },
+  'Hizmet Binaları': { category: 'Hizmet ve Yönetim', subcategory: 'Kamu Binası' },
+  'Yeşil Alanlar': { category: 'Açık Alan', subcategory: 'Park / Millet Bahçesi' },
+  'Stadyumlar': { category: 'Spor', subcategory: 'Stadyum' },
+  'Hastaneler': { category: 'Sağlık', subcategory: 'Hastane' },
+  'Hayvan Hastanesi': { category: 'Sağlık', subcategory: 'Hayvan Hastanesi' },
+  'İSKİ': { category: 'Enerji ve Altyapı', subcategory: 'Su' },
+  'İGDAŞ': { category: 'Enerji ve Altyapı', subcategory: 'Gaz / Elektrik' },
+  'BEDAŞ': { category: 'Enerji ve Altyapı', subcategory: 'Elektrik' },
+  'Living Lab': { category: 'Diğer', subcategory: 'Araştırma / Yenilik' },
+  'Bizim Çınarlar Yaşam Merkezi': { category: 'Kültür ve Yaşam', subcategory: 'Yaşam Merkezi' },
+  'U Metro': { category: 'Ulaşım', subcategory: 'Metro', line: 'U' },
+  'M Metro': { category: 'Ulaşım', subcategory: 'Metro', line: 'M' },
+  'Tarihi Alanlar': { category: 'Tarih ve Kültür Mirası', subcategory: 'Tarihi Alan' },
+  'Üniversiteler': { category: 'Eğitim', subcategory: 'Üniversite' },
+  'VR Tema Park': { category: 'Diğer', subcategory: 'Eğlence' },
+  'Hızlı Oto Yıkama Alanı': { category: 'Hizmet ve Yönetim', subcategory: 'Oto Yıkama' },
+  'Cemevleri': { category: 'Kültür ve Yaşam', subcategory: 'Cemevi' },
+  'Polis Merkezleri': { category: 'Güvenlik', subcategory: 'Polis' },
+  'İtfaiye İstasyonları': { category: 'Güvenlik', subcategory: 'İtfaiye' },
+  'Eğitim Noktaları': { category: 'Eğitim', subcategory: 'Eğitim Kurumu' },
+  'Camiler': { category: 'Kültür ve Yaşam', subcategory: 'Cami' }
+};
+
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeCategory(rawCategory) {
+  const key = String(rawCategory || '').trim();
+
+  if (!key) {
+    return { category: 'Diğer', subcategory: 'Belirtilmedi', line: null };
+  }
+
+  if (normalizedCategoryMap[key]) {
+    return { ...normalizedCategoryMap[key], line: normalizedCategoryMap[key].line || null };
+  }
+
+  const normalizedKey = normalizeText(key);
+  const fallback = Object.keys(normalizedCategoryMap).find((item) => {
+    const itemKey = normalizeText(item);
+    return itemKey.includes(normalizedKey) || normalizedKey.includes(itemKey);
+  });
+
+  if (fallback) {
+    return { ...normalizedCategoryMap[fallback], line: normalizedCategoryMap[fallback].line || null };
+  }
+
+  return { category: 'Diğer', subcategory: 'Belirtilmedi', line: null };
+}
+
+function normalizeLocationItem(item) {
+  const rawCategory = item?.category || item?.cat || item?.CATEGORY || 'Diğer';
+  const normalized = normalizeCategory(rawCategory);
+
+  return {
+    ...item,
+    category: normalized.category,
+    subcategory: normalized.subcategory,
+    line: normalized.line || null,
+    color: categoryColors[normalized.category] || '#64748b'
+  };
+}
 
 let allPoints = [];
 let map = null;
@@ -78,9 +144,15 @@ function normalizeLocations(source) {
         const lat = Number(props.lat ?? coordinates[1]);
         const lng = Number(props.lng ?? coordinates[0]);
 
+        const normalized = normalizeCategory(props.category || props.cat || props.CATEGORY || 'Diğer');
+
         return {
+          id: props.id || index + 1,
           name: props.name || `Nokta ${index + 1}`,
-          cat: props.category || props.cat || props.CATEGORY || 'Genel',
+          cat: normalized.category,
+          subcategory: normalized.subcategory,
+          line: normalized.line || null,
+          color: categoryColors[normalized.category] || '#64748b',
           lat,
           lng,
           mah: props.mahalle || props.mah || props.mahalle_adi || 'Belirtilmemiş'
@@ -90,9 +162,15 @@ function normalizeLocations(source) {
       if (item && typeof item === 'object') {
         const lat = Number(item.lat ?? item.latitude);
         const lng = Number(item.lng ?? item.longitude ?? item.lon ?? item.long);
+        const normalized = normalizeCategory(item.category || item.cat || item.CATEGORY || 'Diğer');
+
         return {
+          id: item.id || index + 1,
           name: item.name || `Nokta ${index + 1}`,
-          cat: item.cat || item.category || 'Genel',
+          cat: normalized.category,
+          subcategory: normalized.subcategory,
+          line: normalized.line || null,
+          color: categoryColors[normalized.category] || '#64748b',
           lat,
           lng,
           mah: item.mah || item.mahalle || 'Belirtilmemiş'
@@ -129,103 +207,20 @@ async function loadLocations() {
   }
 }
 
-function buildCategories() {
-  const counts = {};
-  allPoints.forEach((point) => {
-    counts[point.cat] = (counts[point.cat] || 0) + 1;
-  });
-
-  const container = document.getElementById('cat-view');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  Object.keys(counts).sort().forEach((cat) => {
-    const color = categoryColors[cat] || '#38bdf8';
-    const row = document.createElement('div');
-    row.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
-    row.innerHTML = `
-      <div class="cat-left">
-        <span class="cat-dot" style="background:${color};color:${color};"></span>
-        <span>${cat}</span>
-      </div>
-      <span class="cat-badge">${counts[cat]}</span>
-    `;
-    row.addEventListener('click', () => {
-      if (disabledCategories.has(cat)) {
-        disabledCategories.delete(cat);
-      } else {
-        disabledCategories.add(cat);
-      }
-      buildCategories();
-      updateMapSource();
-      buildPlacesList();
-    });
-    container.appendChild(row);
-  });
-}
-
-function buildPlacesList() {
-  const container = document.getElementById('place-view');
-  if (!container) return;
-
-  const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
-  container.innerHTML = '';
-  let count = 0;
-
-  allPoints.forEach((point) => {
-    if (disabledCategories.has(point.cat)) return;
-
-    const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
-    if (query && !haystack.includes(query)) return;
-
-    count += 1;
-    const color = categoryColors[point.cat] || '#38bdf8';
-    const row = document.createElement('div');
-    row.className = 'place-row';
-    row.innerHTML = `
-      <div class="place-name">${point.name}</div>
-      <div class="place-meta">
-        <span style="color:${color};font-weight:700;">● ${point.cat}</span>
-        <span>📍 ${point.mah}</span>
-      </div>
-    `;
-    row.addEventListener('click', () => flyTo3D(point.lng, point.lat, 16.8, 65, point));
-    container.appendChild(row);
-  });
-
-  const badge = document.getElementById('count-badge');
-  if (badge) badge.textContent = count;
-}
-
-function initializeControls() {
+function initUI() {
+  const tokenInput = document.getElementById('token-input');
   const searchInput = document.getElementById('search-input');
   const searchClear = document.getElementById('search-clear');
-  const tokenInput = document.getElementById('token-input');
-  const saveTokenButton = document.getElementById('save-token-btn');
+  const saveButton = document.getElementById('save-token-btn');
 
-  searchInput.addEventListener('input', () => {
-    const value = searchInput.value;
-    searchClear.classList.toggle('visible', value.length > 0);
-    updateMapSource();
-    buildPlacesList();
-    if (normalizeSearchTerm(value) !== '') {
-      switchTab('place');
-    }
-  });
-
-  searchClear.addEventListener('click', () => {
-    searchInput.value = '';
-    searchClear.classList.remove('visible');
-    updateMapSource();
-    buildPlacesList();
-    switchTab('cat');
-  });
-
-  saveTokenButton.addEventListener('click', saveToken);
-  tokenInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') saveToken();
-  });
+  if (searchClear) searchClear.addEventListener('click', clearSearch);
+  if (searchInput) searchInput.addEventListener('input', handleSearchInput);
+  if (saveButton) saveButton.addEventListener('click', saveToken);
+  if (tokenInput) {
+    tokenInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') saveToken();
+    });
+  }
 
   document.querySelectorAll('[data-light]').forEach((button) => {
     button.addEventListener('click', () => setLighting(button.dataset.light, button));
@@ -235,27 +230,64 @@ function initializeControls() {
     button.addEventListener('click', () => switchTab(button.dataset.tab));
   });
 
+  const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+  if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebar);
+
   document.querySelectorAll('[data-action]').forEach((button) => {
     const action = button.dataset.action;
-    if (action === 'togglePerspective') button.addEventListener('click', togglePerspective);
-    if (action === 'rotateCamera') button.addEventListener('click', rotateCamera);
-    if (action === 'resetToBasaksehir') button.addEventListener('click', resetToBasaksehir);
+    if (action === 'togglePerspective') {
+      button.addEventListener('click', togglePerspective);
+    }
+    if (action === 'rotateCamera') {
+      button.addEventListener('click', rotateCamera);
+    }
+    if (action === 'resetToBasaksehir') {
+      button.addEventListener('click', resetToBasaksehir);
+    }
   });
+}
 
-  document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
+function handleSearchInput() {
+  const input = document.getElementById('search-input');
+  const clearButton = document.getElementById('search-clear');
+  const value = input.value;
+
+  clearButton.classList.toggle('visible', value.length > 0);
+  updateMapSource();
+  buildPlacesList();
+
+  if (normalizeSearchTerm(value) !== '') {
+    switchTab('place');
+  }
+}
+
+function clearSearch() {
+  const input = document.getElementById('search-input');
+  const clearButton = document.getElementById('search-clear');
+
+  input.value = '';
+  clearButton.classList.remove('visible');
+  updateMapSource();
+  buildPlacesList();
+  switchTab('cat');
 }
 
 function switchTab(tabName) {
-  const isCat = tabName === 'cat';
-  const catButton = document.getElementById('tab-cat-btn');
-  const placeButton = document.getElementById('tab-place-btn');
+  const catBtn = document.getElementById('tab-cat-btn');
+  const placeBtn = document.getElementById('tab-place-btn');
   const catView = document.getElementById('cat-view');
   const placeView = document.getElementById('place-view');
 
-  catButton.classList.toggle('active', isCat);
-  placeButton.classList.toggle('active', !isCat);
+  const isCat = tabName === 'cat';
+  catBtn.classList.toggle('active', isCat);
+  placeBtn.classList.toggle('active', !isCat);
   catView.style.display = isCat ? 'block' : 'none';
   placeView.style.display = isCat ? 'none' : 'block';
+}
+
+function showTokenModal() {
+  const modal = document.getElementById('token-modal');
+  if (modal) modal.classList.add('show');
 }
 
 function saveToken() {
@@ -271,11 +303,6 @@ function saveToken() {
   userToken = value;
   document.getElementById('token-modal').classList.remove('show');
   initMapbox(value);
-}
-
-function showTokenModal() {
-  const modal = document.getElementById('token-modal');
-  if (modal) modal.classList.add('show');
 }
 
 function initMapbox(token) {
@@ -306,11 +333,14 @@ function initMapbox(token) {
 
 function buildGeoJSON() {
   const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
+
   const features = allPoints
     .filter((point) => {
       if (disabledCategories.has(point.cat)) return false;
       if (!query) return true;
-      return normalizeSearchTerm(`${point.name} ${point.mah}`).includes(query);
+
+      const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
+      return haystack.includes(query);
     })
     .map((point, index) => ({
       type: 'Feature',
@@ -505,6 +535,85 @@ function setLighting(preset, button) {
   if (button) button.classList.add('active');
 }
 
+function buildCategories() {
+  const counts = {};
+  allPoints.forEach((point) => {
+    counts[point.cat] = (counts[point.cat] || 0) + 1;
+  });
+
+  const container = document.getElementById('cat-view');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  Object.keys(counts).sort().forEach((cat) => {
+    const color = categoryColors[cat] || '#38bdf8';
+    const row = document.createElement('div');
+    row.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
+    row.innerHTML = `
+      <div class="cat-left">
+        <span class="cat-dot" style="background:${color};color:${color};"></span>
+        <span>${cat}</span>
+      </div>
+      <span class="cat-badge">${counts[cat]}</span>
+    `;
+    row.addEventListener('click', () => {
+      if (disabledCategories.has(cat)) {
+        disabledCategories.delete(cat);
+      } else {
+        disabledCategories.add(cat);
+      }
+      buildCategories();
+      updateMapSource();
+      buildPlacesList();
+    });
+    container.appendChild(row);
+  });
+}
+
+function buildPlacesList() {
+  const container = document.getElementById('place-view');
+  if (!container) return;
+
+  const query = normalizeSearchTerm(document.getElementById('search-input')?.value || '');
+  container.innerHTML = '';
+  let count = 0;
+
+  allPoints.forEach((point) => {
+    if (disabledCategories.has(point.cat)) return;
+
+    const haystack = normalizeSearchTerm(`${point.name} ${point.mah}`);
+    if (query && !haystack.includes(query)) return;
+
+    count += 1;
+    const color = categoryColors[point.cat] || '#38bdf8';
+    const row = document.createElement('div');
+    row.className = 'place-row';
+    row.innerHTML = `
+      <div class="place-name">${point.name}</div>
+      <div class="place-meta">
+        <span style="color:${color};font-weight:700;">● ${point.cat}</span>
+        <span>📍 ${point.mah}</span>
+      </div>
+    `;
+    row.addEventListener('click', () => flyTo3D(point.lng, point.lat, 16.8, 65, point));
+    container.appendChild(row);
+  });
+
+  if (!count) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.innerHTML = `
+      <h3>Sonuç bulunamadı</h3>
+      <p>Arama kriterini değiştirerek farklı bir nokta arayabilirsiniz.</p>
+    `;
+    container.appendChild(emptyState);
+  }
+
+  const badge = document.getElementById('count-badge');
+  if (badge) badge.textContent = count;
+}
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
@@ -520,9 +629,7 @@ function toggleSidebar() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  initializeControls();
-  buildCategories();
-  buildPlacesList();
+  initUI();
   await loadLocations();
 
   if (!userToken) {
