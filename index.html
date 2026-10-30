@@ -1,88 +1,1469 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Başakşehir 3D Dijital İkiz | Mapbox Standard</title>
-  <meta name="description" content="Başakşehir ilçesindeki kamu hizmet noktalarını 3D harita üzerinde keşfedin.">
+<html lang="tr"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Başakşehir Totem LED Ekran Yerleşim Önerisi</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy-light:#142A4D;
+    --teal:#1C7293;
+    --cyan:#00C2D1;
+    --bg:#F4F7FA;
+    --white:#FFFFFF;
+    --text:#1C2530;
+    --muted:#6B7787;
+    --border:#E2E8F0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:var(--bg);}
+  #app{height:100vh;display:flex;flex-direction:column;}
 
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  /* ---------- HEADER ---------- */
+  .topbar{
+    background:var(--navy);
+    color:var(--white);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 24px;
+    flex-shrink:0;
+    gap:20px;
+    z-index:500;
+  }
+  .brand{display:flex;align-items:center;gap:14px;min-width:0;}
+  .brand-mark{
+    display:grid;
+    grid-template-columns:repeat(3,8px);
+    grid-template-rows:repeat(3,8px);
+    gap:3px;
+    flex-shrink:0;
+  }
+  .brand-mark span{display:block;width:8px;height:8px;border-radius:2px;background:var(--cyan);}
+  .brand-mark span:nth-child(1){opacity:.35;}
+  .brand-mark span:nth-child(2){opacity:.9;}
+  .brand-mark span:nth-child(3){opacity:.5;}
+  .brand-mark span:nth-child(4){opacity:.6;}
+  .brand-mark span:nth-child(5){opacity:1;}
+  .brand-mark span:nth-child(6){opacity:.4;}
+  .brand-mark span:nth-child(7){opacity:.5;}
+  .brand-mark span:nth-child(8){opacity:.8;}
+  .brand-mark span:nth-child(9){opacity:.3;}
+  .brand-text h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.2px;line-height:1.25;}
+  .brand-text p{font-size:12px;margin:2px 0 0;color:#9FB3CC;}
+  .stats{display:flex;gap:22px;flex-shrink:0;}
+  .stat{text-align:center;}
+  .stat strong{display:block;font-size:20px;font-weight:700;color:var(--cyan);}
+  .stat span{display:block;font-size:10.5px;color:#9FB3CC;text-transform:uppercase;letter-spacing:.5px;margin-top:1px;}
+  .btn-ghost{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.25);
+    color:var(--white);
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease;
+  }
+  .btn-ghost:hover{background:rgba(255,255,255,0.18);}
+  .btn-ghost:focus-visible, .chip:focus-visible, .cat-row:focus-visible, .loc-card:focus-visible{outline:2px solid var(--cyan); outline-offset:2px;}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <link rel="stylesheet" href="./styles.css">
+  /* ---------- LAYOUT ---------- */
+  .layout{flex:1;display:flex;min-height:0;}
+  #sidebar{
+    width:340px;
+    background:var(--white);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    transition:margin-left .25s ease;
+  }
+  #sidebar.collapsed{margin-left:-340px;}
+  #mapWrap{flex:1;position:relative;min-width:0;}
+  #map{position:absolute;inset:0;}
+
+  /* ---------- SIDEBAR CONTENT ---------- */
+  .search-box{padding:16px 16px 8px;}
+  .search-box input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:13.5px;
+    background:var(--bg);
+    color:var(--text);
+  }
+  .search-box input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+  .coord-box{display:flex;gap:6px;padding:0 16px 14px;}
+  .coord-box input{
+    flex:1;min-width:0;
+    padding:9px 11px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:12.5px;
+    background:var(--bg);
+    color:var(--text);
+  }
+  .coord-box input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+  .coord-box input.coord-error{border-color:#C92A2A;background:#FFF1F1;}
+  .coord-go-btn{
+    background:var(--navy);color:var(--white);border:none;
+    border-radius:8px;padding:0 14px;font-size:12.5px;font-weight:700;
+    cursor:pointer;flex-shrink:0;
+  }
+  .coord-go-btn:hover{background:var(--navy-light);}
+  .coord-hint{font-size:10.5px;color:var(--muted);padding:0 16px 10px;margin-top:-8px;}
+  .filter-group{padding:10px 16px;border-bottom:1px solid var(--border);}
+  .filter-group h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px;font-weight:700;}
+  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{
+    border:1px solid var(--border);
+    background:var(--white);
+    color:var(--text);
+    font-size:12.5px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .chip.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+  #categoryList{display:flex;flex-direction:column;gap:6px;}
+  .cat-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:6px 8px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    user-select:none;
+  }
+  .cat-row:hover{background:var(--bg);}
+  .cat-row.inactive{opacity:.4;}
+  .cat-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .cat-dot svg{display:block;}
+  .cat-label{flex:1;}
+  .cat-count{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .location-list{flex:1;overflow-y:auto;padding:8px 12px 16px;}
+  .list-meta{font-size:11.5px;color:var(--muted);padding:4px 8px 8px;}
+  .loc-card{
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:10px 11px;
+    margin-bottom:7px;
+    cursor:pointer;
+    background:var(--white);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .loc-card:hover{border-color:var(--teal);background:var(--bg);}
+  .loc-top{display:flex;align-items:flex-start;gap:8px;}
+  .loc-dot{width:20px;height:20px;border-radius:50%;margin-top:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .loc-dot svg{display:block;}
+  .loc-name{font-size:13.5px;font-weight:700;line-height:1.3;}
+  .loc-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .loc-badges{display:flex;gap:6px;margin-top:6px;}
+  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--bg);color:var(--muted);}
+  .empty-state{padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;}
+
+  /* ---------- MAP OVERLAYS ---------- */
+  .map-legend{
+    position:absolute;
+    bottom:18px;
+    left:18px;
+    background:rgba(255,255,255,0.96);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:12px;
+    box-shadow:0 4px 14px rgba(11,31,58,0.12);
+    z-index:400;
+    max-width:230px;
+  }
+  .map-legend h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+  .map-legend .leg-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .map-legend .leg-row:last-child{margin-bottom:0;}
+  .map-legend .cat-dot{width:18px;height:18px;}
+
+  .pin-popup .leaflet-popup-content-wrapper{border-radius:10px;}
+  .pin-popup .leaflet-popup-content{margin:14px 16px;min-width:210px;}
+  .pp-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+  .pp-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .pp-title{font-size:14px;font-weight:700;margin:0;}
+  .pp-row{font-size:12px;color:var(--muted);margin:2px 0;}
+  .pp-row b{color:var(--text);}
+  .pp-suggestion{
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px solid var(--border);
+    font-size:12px;
+  }
+  .pp-sugg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .pp-sugg-head b{color:var(--teal);font-size:11px;text-transform:uppercase;letter-spacing:.4px;}
+  .pp-edited-tag{font-size:10px;font-weight:600;color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0;margin-left:6px;}
+  .pp-edit-btn{
+    background:none;border:none;cursor:pointer;color:var(--muted);
+    padding:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .pp-edit-btn:hover{color:var(--teal);background:var(--bg);}
+  .pp-sugg-text{color:var(--text);line-height:1.4;}
+  .pp-edit-textarea{
+    width:100%;border:1px solid var(--border);border-radius:7px;
+    padding:7px 8px;font-size:12.5px;font-family:inherit;color:var(--text);
+    resize:vertical;margin-top:2px;
+  }
+  .pp-edit-textarea:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+  .pp-edit-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .pp-btn{font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--white);cursor:pointer;color:var(--text);}
+  .pp-btn-save{background:var(--navy);color:var(--white);border-color:var(--navy);}
+  .pp-btn-save:hover{background:var(--navy-light);}
+  .pp-btn-cancel:hover{background:var(--bg);}
+  .pp-btn-reset{color:var(--muted);margin-left:auto;}
+  .pp-btn-reset:hover{color:var(--text);background:var(--bg);}
+  .pp-btn-delete{color:#C92A2A;border-color:#F1C2C2;}
+  .pp-btn-delete:hover{background:#FFF1F1;}
+  .pp-icon-btn{
+    background:none;border:none;cursor:pointer;color:var(--muted);
+    padding:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .pp-icon-btn:hover{color:#C92A2A;background:#FFF1F1;}
+  .pp-head-actions{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0;}
+  .pp-custom-tag{font-size:10px;font-weight:600;color:var(--muted);font-style:italic;margin-left:6px;}
+  .pp-field{margin-bottom:8px;}
+  .pp-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  .pp-input, .pp-select{
+    width:100%;border:1px solid var(--border);border-radius:7px;
+    padding:7px 8px;font-size:12.5px;font-family:inherit;color:var(--text);background:var(--white);
+  }
+  .pp-input:focus, .pp-select:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+
+  .add-mode-banner{
+    position:absolute;
+    top:16px;left:50%;
+    transform:translateX(-50%);
+    background:var(--navy);
+    color:var(--white);
+    padding:10px 16px;
+    border-radius:30px;
+    font-size:13px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:0 6px 18px rgba(11,31,58,0.3);
+    z-index:450;
+  }
+  .add-mode-banner button{
+    background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.3);
+    color:var(--white);
+    font-size:12px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:14px;
+    cursor:pointer;
+  }
+  .add-mode-banner button:hover{background:rgba(255,255,255,0.28);}
+  #map.add-mode-cursor{cursor:crosshair;}
+
+  .target-pin{width:34px;height:34px;position:relative;display:flex;align-items:center;justify-content:center;}
+  .target-pin-dot{width:12px;height:12px;border-radius:50%;background:var(--cyan);border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,194,209,0.45);z-index:2;}
+  .target-pin-ring{position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(0,194,209,0.35);animation:pulse-ring 1.4s ease-out infinite;}
+  @keyframes pulse-ring{
+    0%{transform:scale(0.3);opacity:0.85;}
+    100%{transform:scale(1.5);opacity:0;}
+  }
+
+  .divpin{
+    width:28px;height:28px;border-radius:50%;
+    border:2.5px solid #fff;
+    box-shadow:0 2px 6px rgba(0,0,0,0.35);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .divpin svg{display:block;}
+
+  @media (max-width: 880px){
+    #sidebar{position:absolute;top:0;left:0;height:100%;z-index:600;width:86vw;max-width:340px;box-shadow:0 0 24px rgba(0,0,0,0.25);}
+    #sidebar.collapsed{margin-left:-86vw;}
+    .stats{display:none;}
+  }
+
+  @media print{
+    .topbar .btn-ghost, #sidebar{display:none !important;}
+    #app, .layout{height:100vh;}
+  }
+</style>
 </head>
 <body>
 <div id="app">
-  <div id="map"></div>
-  <div id="status-banner" class="status-banner hidden" aria-live="polite"></div>
-
-  <div id="token-modal">
-    <div class="token-box">
-      <h2>Mapbox Erişim Anahtarı (Token)</h2>
-      <p>Mapbox v3 Standard 3D motoru için public token gereklidir.<br>
-        <a href="https://account.mapbox.com/" target="_blank" rel="noopener" style="color:#38bdf8;text-decoration:none;font-weight:700;">mapbox.com</a>
-        hesabınızdaki <code>pk.eyJ...</code> anahtarını girin.</p>
-      <input type="text" id="token-input" class="token-input" placeholder="pk.eyJ1...">
-      <button id="save-token-btn" class="token-btn">Haritayı Başlat</button>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+      <div class="brand-text">
+        <h1>Totem LED Ekran Yerleşim Önerisi</h1>
+        <p>Başakşehir Belediyesi · Proje Koordinasyon Birimi</p>
+      </div>
     </div>
-  </div>
-
-  <div id="hud-tools">
-    <button id="sidebar-toggle-btn" class="hud-btn" title="Paneli Göster/Gizle">
-      <i id="sidebar-toggle-icon" class="fa-solid fa-bars"></i>
-    </button>
-    <button class="hud-btn" data-action="togglePerspective" title="3D / 2D Perspektif Değiştir">
-      <i class="fa-solid fa-cube"></i>
-    </button>
-    <button class="hud-btn" data-action="rotateCamera" title="Şehir Çevresinde Tur">
-      <i id="orbit-icon" class="fa-solid fa-arrows-rotate"></i>
-    </button>
-    <button class="hud-btn" data-action="resetToBasaksehir" title="Merkeze Dön">
-      <i class="fa-solid fa-location-crosshairs"></i>
-    </button>
-  </div>
-
-  <div id="sidebar">
-    <div id="sidebar-header">
-      <div class="badge-pill"><i class="fa-solid fa-satellite"></i> Belediye Portalı</div>
-      <h1>Başakşehir Dijital İkiz</h1>
-      <p>Kamusal hizmet noktaları • 3D harita • canlı haritalama</p>
+    <div class="stats">
+      <div class="stat"><strong id="statTotal">59</strong><span>Nokta</span></div>
+      <div class="stat"><strong id="statVisible">59</strong><span>Görünen</span></div>
     </div>
+    <button class="btn-ghost" id="addPinBtn">+ Nokta Ekle</button>
+    <button class="btn-ghost" id="downloadBtn">Güncel Halini İndir</button>
+    <button class="btn-ghost" id="toggleSidebar">Sunum Modu</button>
+  </header>
 
-    <div class="portal-stats">
-      <div class="stat-card"><span>Toplam</span><strong id="stat-total">0</strong></div>
-      <div class="stat-card"><span>Kategori</span><strong id="stat-categories">0</strong></div>
-      <div class="stat-card"><span>Aktif</span><strong id="stat-visible">0</strong></div>
-    </div>
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="search-box">
+        <input id="searchInput" type="text" placeholder="Nokta veya mahalle ara…">
+      </div>
+      <div class="coord-box">
+        <input id="coordInput" type="text" placeholder="Koordinat yapıştır (örn. 41.0082, 28.9784)">
+        <button type="button" class="coord-go-btn" id="coordGoBtn">Git</button>
+      </div>
+      <div class="coord-hint">Google Maps'ten kopyaladığınız koordinatı veya bağlantıyı buraya yapıştırabilirsiniz</div>
 
-    <div class="lighting-bar">
-      <button class="btn-light active" data-light="dusk"><i class="fa-solid fa-cloud-sun"></i> Alacakaranlık</button>
-      <button class="btn-light" data-light="night"><i class="fa-solid fa-moon"></i> Gece</button>
-      <button class="btn-light" data-light="day"><i class="fa-solid fa-sun"></i> Gündüz</button>
-      <button class="btn-light" data-light="dawn"><i class="fa-solid fa-mountain-sun"></i> Şafak</button>
-    </div>
+      <div class="filter-group">
+        <h3>Kategori</h3>
+        <div id="categoryList"></div>
+      </div>
 
-    <div id="search-box">
-      <i class="fa-solid fa-magnifying-glass search-icon"></i>
-      <input type="text" id="search-input" placeholder="Tesis, okul, cami, metro ara...">
-      <button id="search-clear" title="Aramayı Temizle">✕</button>
-    </div>
+      <div class="list-meta" id="listMeta"></div>
+      <div class="location-list" id="locationList"></div>
+    </aside>
 
-    <div class="tab-header">
-      <button id="tab-cat-btn" class="tab-item active" data-tab="cat">Kategoriler</button>
-      <button id="tab-place-btn" class="tab-item" data-tab="place">Tesis Listesi (<span id="count-badge">0</span>)</button>
-    </div>
-
-    <div id="list-container">
-      <div id="cat-view"></div>
-      <div id="place-view" style="display:none;"></div>
-    </div>
+    <main id="mapWrap">
+      <div id="map"></div>
+      <div class="map-legend" id="mapLegend"></div>
+      <div class="add-mode-banner" id="addModeBanner" style="display:none;">
+        <span>Haritada bir noktaya tıklayarak yeni pin ekleyin</span>
+        <button type="button" id="cancelAddMode">Vazgeç</button>
+      </div>
+    </main>
   </div>
 </div>
 
-<script src="./app.js"></script>
-</body>
-</html>
+<script>
+/* Dışa aktarma (indirme) için sayfanın ilk/temiz halini en başta saklıyoruz */
+const ORIGINAL_SOURCE = document.documentElement.outerHTML;
+
+/* ======================= DATA ======================= */
+const CATS = {
+  metro:        { label: "Toplu Taşıma (Metro)",        color: "#2E86AB" },
+  yesil:        { label: "Yeşil Alan & Spor",            color: "#2F9E44" },
+  kamu:         { label: "Kamu, Kültür & Gençlik",       color: "#7048E8" },
+  ticaret:      { label: "Ticaret (AVM / Pazar)",        color: "#F08C00" },
+  sosyal:       { label: "Sosyal Alan (Meydan/Cami/Mahalle)", color: "#E64980" },
+  egitim_saglik:{ label: "Eğitim & Sağlık",              color: "#FA5252" },
+  kavsak:       { label: "Bağlantı Noktası (Kavşak)",    color: "#495057" }
+};
+
+const CONTENT_SUGGESTION = {
+  metro:        "Yönlendirme tabelası + güncel duyurular",
+  yesil:        "Etkinlik duyurusu + gençlik / aile içeriği",
+  kamu:         "Resmi duyuru + gençlik programları",
+  ticaret:      "Kampanya tanıtımı + genel bilgilendirme",
+  sosyal:       "Yerel duyuru + toplumsal etkinlik içeriği",
+  egitim_saglik:"Bilgilendirme + yönlendirme",
+  kavsak:       "Trafik / yönlendirme + genel duyuru"
+};
+
+/* ---- Kategori sembolleri (saf SVG, harici ikon kütüphanesi gerektirmez) ---- */
+const ICON_SHAPES = {
+  metro: bg => `
+    <rect x="4" y="5" width="16" height="10" rx="3" fill="#fff"/>
+    <rect x="7" y="7.4" width="4" height="3" rx="0.6" fill="${bg}"/>
+    <rect x="13" y="7.4" width="4" height="3" rx="0.6" fill="${bg}"/>
+    <circle cx="8" cy="17.3" r="1.7" fill="#fff"/>
+    <circle cx="16" cy="17.3" r="1.7" fill="#fff"/>
+  `,
+  yesil: () => `
+    <circle cx="12" cy="9.5" r="6" fill="#fff"/>
+    <rect x="10.6" y="14.3" width="2.8" height="6" rx="1" fill="#fff"/>
+  `,
+  kamu: bg => `
+    <polygon points="12,3 21,9.5 3,9.5" fill="#fff"/>
+    <rect x="4" y="9.5" width="16" height="9.5" rx="1" fill="#fff"/>
+    <rect x="6.8" y="11" width="1.6" height="6.5" fill="${bg}"/>
+    <rect x="11.2" y="11" width="1.6" height="6.5" fill="${bg}"/>
+    <rect x="15.6" y="11" width="1.6" height="6.5" fill="${bg}"/>
+  `,
+  ticaret: () => `
+    <path d="M8.5 9 C8.5 5.4 15.5 5.4 15.5 9" stroke="#fff" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    <rect x="5.5" y="9" width="13" height="10.5" rx="1.6" fill="#fff"/>
+  `,
+  sosyal: () => `
+    <rect x="6.4" y="3.5" width="1.8" height="17" rx="0.6" fill="#fff"/>
+    <polygon points="8.2,5 18,8.3 8.2,11.6" fill="#fff"/>
+  `,
+  egitim_saglik: () => `
+    <rect x="10" y="5" width="4" height="14" rx="1" fill="#fff"/>
+    <rect x="5" y="10" width="14" height="4" rx="1" fill="#fff"/>
+  `,
+  kavsak: bg => `
+    <rect x="9.4" y="1" width="5.2" height="22" rx="1" fill="#fff"/>
+    <rect x="1" y="9.4" width="22" height="5.2" rx="1" fill="#fff"/>
+    <rect x="11.2" y="1.2" width="1.6" height="2.2" fill="${bg}"/>
+    <rect x="11.2" y="4.4" width="1.6" height="2.2" fill="${bg}"/>
+    <rect x="11.2" y="7.6" width="1.6" height="1.6" fill="${bg}"/>
+    <rect x="11.2" y="14.8" width="1.6" height="1.6" fill="${bg}"/>
+    <rect x="11.2" y="18.0" width="1.6" height="2.2" fill="${bg}"/>
+    <rect x="11.2" y="21.2" width="1.6" height="1.6" fill="${bg}"/>
+    <rect x="1.2" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
+    <rect x="4.4" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
+    <rect x="7.6" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
+    <rect x="14.8" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
+    <rect x="18.0" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
+    <rect x="21.2" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
+  `
+};
+
+function iconSvg(catKey, bgColor, size){
+  if (catKey === "kavsak"){
+    return `<img src="${KAVSAK_IMG}" width="${size}" height="${size}" style="display:block;border-radius:50%;object-fit:contain;" alt="">`;
+  }
+  const shapes = ICON_SHAPES[catKey](bgColor);
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${shapes}</svg>`;
+}
+
+const KAVSAK_IMG = "data:image/png;base64,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";
+
+const PENCIL_SVG = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+const TRASH_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>`;
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+}
+
+/* === LOCATIONS_START === */
+const LOCATIONS = [
+  {
+    "id": 37,
+    "name": "Köşe Başı",
+    "lat": 41.07273098249642,
+    "lng": 28.750920599490467,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 38,
+    "name": "Yeşil Vadi Caddesi",
+    "lat": 41.10929974732744,
+    "lng": 28.80335139256947,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 39,
+    "name": "Hürriyet Bulvarı",
+    "lat": 41.107452008084195,
+    "lng": 28.795184129222783,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 40,
+    "name": "SULAR VADİSİ",
+    "lat": 41.119507576381515,
+    "lng": 28.807256570327077,
+    "cat": "yesil",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 41,
+    "name": "2252. SK",
+    "lat": 41.0908425468357,
+    "lng": 28.721770640787714,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 42,
+    "name": "ALTINŞEHİR MİLLET BAHÇESİ",
+    "lat": 41.067924653563836,
+    "lng": 28.75875944282245,
+    "cat": "yesil",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 43,
+    "name": "Abdülhamit Han Camiii",
+    "lat": 41.13004336413853,
+    "lng": 28.78008301298644,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 44,
+    "name": "Azatlı Baruthanesi",
+    "lat": 41.088703937543684,
+    "lng": 28.74237138279772,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 45,
+    "name": "Başakşehir merkez camii",
+    "lat": 41.12083382636627,
+    "lng": 28.77301617266317,
+    "cat": "sosyal",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 46,
+    "name": "Kayaşehir Bulvarı",
+    "lat": 41.106007857192566,
+    "lng": 28.76772712608193,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 47,
+    "name": "2801.SK",
+    "lat": 41.089096135338046,
+    "lng": 28.675222524459343,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 48,
+    "name": "ESKİ EDİRNE ASFALTI",
+    "lat": 41.14368147117708,
+    "lng": 28.797364534499938,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 49,
+    "name": "Kayaşehir Fuar Sergi Alanı",
+    "lat": 41.105419599997305,
+    "lng": 28.759505513800995,
+    "cat": "kamu",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 50,
+    "name": "Çam Sakura M. Bahçesi",
+    "lat": 41.09857574273812,
+    "lng": 28.78191717284554,
+    "cat": "metro",
+    "neighborhood": "—",
+    "customContent": "Yönlendirme tabelası + güncel duyurular",
+    "custom": true
+  },
+  {
+    "id": 51,
+    "name": "Tulip Kavşak",
+    "lat": 41.108939836442495,
+    "lng": 28.78022158744102,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 52,
+    "name": "İSMEK KARŞISI",
+    "lat": 41.09583969239912,
+    "lng": 28.809695492380737,
+    "cat": "sosyal",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 53,
+    "name": "Lale Sokak",
+    "lat": 41.08275822602999,
+    "lng": 28.677015536785735,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 54,
+    "name": "Ali Soylu Caddesi",
+    "lat": 41.10473257207375,
+    "lng": 28.80848760965382,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 55,
+    "name": "ŞEHİT ERKAN GÖKDAŞ SOKAGI",
+    "lat": 41.06497918474416,
+    "lng": 28.74682891970512,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 56,
+    "name": "Mimar kemalletin caddesi",
+    "lat": 41.107725773425535,
+    "lng": 28.780832277955632,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 57,
+    "name": "avni akyol bulv",
+    "lat": 41.06946059499262,
+    "lng": 28.684107363268218,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 58,
+    "name": "Adnan Mendere Bulvarı",
+    "lat": 41.11913937303147,
+    "lng": 28.774060361696428,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 59,
+    "name": "Necmettin Erbakan Caddesi",
+    "lat": 41.105971666362706,
+    "lng": 28.790776106665636,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 60,
+    "name": "Ertuğrul Gazi Caddesi",
+    "lat": 41.09787510532639,
+    "lng": 28.80495605515452,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 61,
+    "name": "İkitelli-Gaziosmanpaşa Yolu",
+    "lat": 41.118148842067875,
+    "lng": 28.799824023024602,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 62,
+    "name": "Kayaşehir Bulvarı",
+    "lat": 41.11967829012026,
+    "lng": 28.766461149317514,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 63,
+    "name": "İstiklal Caddesi",
+    "lat": 41.13933063742423,
+    "lng": 28.769775360484186,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 64,
+    "name": "1117 Sokak",
+    "lat": 41.0880001760772,
+    "lng": 28.757891688598058,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 65,
+    "name": "Nedim Sokak",
+    "lat": 41.08460136939943,
+    "lng": 28.723566883570488,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 66,
+    "name": "Avni Akyol Bulvarı",
+    "lat": 41.07292302803717,
+    "lng": 28.692400667781886,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 67,
+    "name": "2801 Sokak",
+    "lat": 41.0859048260902,
+    "lng": 28.678198585249657,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 68,
+    "name": "Mustafa Kemal Atatürk Bulvarı",
+    "lat": 41.069328389646195,
+    "lng": 28.66621717515298,
+    "cat": "kavsak",
+    "neighborhood": "—",
+    "custom": true
+  },
+  {
+    "id": 69,
+    "name": "Bahçeşehir BKSM",
+    "lat": 41.06683875192738,
+    "lng": 28.691310882568363,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 70,
+    "name": "Bahçeşehir Gölet",
+    "lat": 41.067421152938444,
+    "lng": 28.69391798973084,
+    "cat": "yesil",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 71,
+    "name": "Bahçeşehir Millet Kütüphanesi",
+    "lat": 41.06250698255502,
+    "lng": 28.68418157100678,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 72,
+    "name": "Bahçeşehir Ek Hizmet Binası",
+    "lat": 41.062329013939035,
+    "lng": 28.684567809104923,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 73,
+    "name": "Bahçeşehir Ek Hizmet Binası",
+    "lat": 41.062191492405944,
+    "lng": 28.684860169887546,
+    "cat": "kamu",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 74,
+    "name": "Bahçeşehir Spor Merkezi",
+    "lat": 41.06832912200257,
+    "lng": 28.677446544170383,
+    "cat": "yesil",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 75,
+    "name": "Özdemir BAYRAKTAR Bilim Kültür ve Yaşam Parkı",
+    "lat": 41.07935923686784,
+    "lng": 28.663539290428165,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 76,
+    "name": "Başakşehir Millet Kıraathanesi",
+    "lat": 41.12036167961076,
+    "lng": 28.77028048038483,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 77,
+    "name": "Başakşehir Belediyesi Hizmet Binası",
+    "lat": 41.12088298918944,
+    "lng": 28.77129435539246,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 78,
+    "name": "Başakşehir Belediyesi Hizmet Binası",
+    "lat": 41.12148107569862,
+    "lng": 28.77102077007294,
+    "cat": "kamu",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 79,
+    "name": "Başakşehir Millet Bahçesi",
+    "lat": 41.11950696541152,
+    "lng": 28.774480819702152,
+    "cat": "yesil",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 80,
+    "name": "Kayaşehir Meydanı",
+    "lat": 41.1195493982939,
+    "lng": 28.771900534629825,
+    "cat": "sosyal",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 81,
+    "name": "Başakşehir Spor Parkı (Onurkent)",
+    "lat": 41.10674756802432,
+    "lng": 28.780352175235752,
+    "cat": "yesil",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 82,
+    "name": "Mehmet Emin Saraç Kültür Merkezi",
+    "lat": 41.09968781159448,
+    "lng": 28.78671705722809,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 83,
+    "name": "Güvercintepe Kültür ve Yaşam Merkezi",
+    "lat": 41.08232320153482,
+    "lng": 28.750925660133365,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 84,
+    "name": "Sezai Karakoç Gençlik Merkezi",
+    "lat": 41.085551870407905,
+    "lng": 28.752990961074833,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 85,
+    "name": "Sular Vadisi",
+    "lat": 41.1193766925875,
+    "lng": 28.807255458901068,
+    "cat": "yesil",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 86,
+    "name": "Başak Pazar",
+    "lat": 41.111161412501936,
+    "lng": 28.80945291533021,
+    "cat": "ticaret",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 87,
+    "name": "Sular Vadisi",
+    "lat": 41.104449643016885,
+    "lng": 28.806377649307255,
+    "cat": "yesil",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 88,
+    "name": "Kayaşehir Fuar Sergi Alanı",
+    "lat": 41.10528232170266,
+    "lng": 28.759605288505558,
+    "cat": "ticaret",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 89,
+    "name": "Kayaşehir Fuar Sergi Alanı",
+    "lat": 41.10530253221912,
+    "lng": 28.75929415225983,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 90,
+    "name": "Kayaşehir Kültür ve Yaşam Merkezi",
+    "lat": 41.105775456528676,
+    "lng": 28.76082837581635,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 91,
+    "name": "Fenertepe Kapalı Pazar",
+    "lat": 41.132948734286785,
+    "lng": 28.78080010414124,
+    "cat": "ticaret",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 92,
+    "name": "Necip Fazıl Kısakürek Kültür ve Yaşam Parkı",
+    "lat": 41.120495038269205,
+    "lng": 28.80598068237305,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 93,
+    "name": "Nikah Sarayı",
+    "lat": 41.117504506292086,
+    "lng": 28.798148632049564,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 94,
+    "name": "Nikah Sarayı",
+    "lat": 41.11734285203328,
+    "lng": 28.79850268363953,
+    "cat": "kamu",
+    "neighborhood": "OutDoor Led Ekran",
+    "custom": true
+  },
+  {
+    "id": 95,
+    "name": "Living Lab",
+    "lat": 41.09535012138266,
+    "lng": 28.803105354309086,
+    "cat": "kamu",
+    "neighborhood": "InDoor Led Ekran",
+    "custom": true
+  }
+];
+/* === LOCATIONS_END === */
+let runningId = Math.max(...LOCATIONS.map(l => l.id));
+function nextId(){ runningId += 1; return runningId; }
+
+/* ======================= STATE ======================= */
+let searchTerm = "";
+let activeCats = new Set(Object.keys(CATS));
+
+/* ======================= MAP INIT ======================= */
+const map = L.map("map", { zoomControl: true }).setView([41.092, 28.755], 12.5);
+
+/* Uydu görüntüsü (Esri World Imagery) */
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19,
+  attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, GIS User Community"
+}).addTo(map);
+
+/* Yol/yer adı etiketleri */
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 19,
+  pane: "overlayPane"
+}).addTo(map);
+
+function renderPopupView(wrapper, loc){
+  const color = CATS[loc.cat].color;
+  const isCustom = loc.customContent !== undefined && loc.customContent !== null;
+  const suggestion = isCustom ? loc.customContent : CONTENT_SUGGESTION[loc.cat];
+  wrapper.innerHTML = `
+    <div class="pp-head">
+      <span class="pp-icon" style="background:${color}">${iconSvg(loc.cat, color, 15)}</span>
+      <div class="pp-title">${loc.id}. ${loc.name}${loc.custom ? '<span class="pp-custom-tag">· kendi eklediğim</span>' : ''}</div>
+      ${loc.custom ? `<div class="pp-head-actions"><button type="button" class="pp-icon-btn" data-action="delete-loc" aria-label="Noktayı sil" title="Noktayı sil">${TRASH_SVG}</button></div>` : ''}
+    </div>
+    <div class="pp-row"><b>Kategori:</b> ${CATS[loc.cat].label}</div>
+    <div class="pp-row"><b>Mahalle / Bölge:</b> ${loc.neighborhood}</div>
+    <div class="pp-suggestion">
+      <div class="pp-sugg-head">
+        <span><b>İçerik Önerisi</b>${isCustom ? '<span class="pp-edited-tag">· düzenlendi</span>' : ''}</span>
+        <button type="button" class="pp-edit-btn" aria-label="İçerik önerisini düzenle" title="Düzenle">${PENCIL_SVG}</button>
+      </div>
+      <div class="pp-sugg-text">${escapeHtml(suggestion)}</div>
+    </div>
+  `;
+  wrapper.querySelector(".pp-edit-btn").addEventListener("click", () => {
+    renderPopupEdit(wrapper, loc);
+    refreshPopup(loc);
+  });
+  const delBtn = wrapper.querySelector('[data-action="delete-loc"]');
+  if (delBtn){
+    delBtn.addEventListener("click", () => deleteLocation(loc));
+  }
+}
+
+function renderPopupEdit(wrapper, loc){
+  const color = CATS[loc.cat].color;
+  const isCustom = loc.customContent !== undefined && loc.customContent !== null;
+  const current = isCustom ? loc.customContent : CONTENT_SUGGESTION[loc.cat];
+  wrapper.innerHTML = `
+    <div class="pp-head">
+      <span class="pp-icon" style="background:${color}">${iconSvg(loc.cat, color, 15)}</span>
+      <div class="pp-title">${loc.id}. ${loc.name}</div>
+    </div>
+    <div class="pp-row"><b>Kategori:</b> ${CATS[loc.cat].label}</div>
+    <div class="pp-row"><b>Mahalle / Bölge:</b> ${loc.neighborhood}</div>
+    <div class="pp-suggestion">
+      <div class="pp-sugg-head"><b>İçerik Önerisini Düzenle</b></div>
+      <textarea class="pp-edit-textarea" rows="3">${escapeHtml(current)}</textarea>
+      <div class="pp-edit-actions">
+        <button type="button" class="pp-btn pp-btn-save">Kaydet</button>
+        <button type="button" class="pp-btn pp-btn-cancel">Vazgeç</button>
+        ${isCustom ? '<button type="button" class="pp-btn pp-btn-reset">Varsayılana Dön</button>' : ''}
+      </div>
+    </div>
+  `;
+  const ta = wrapper.querySelector(".pp-edit-textarea");
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  wrapper.querySelector(".pp-btn-cancel").addEventListener("click", () => {
+    renderPopupView(wrapper, loc);
+    refreshPopup(loc);
+  });
+  wrapper.querySelector(".pp-btn-save").addEventListener("click", () => {
+    const val = ta.value.trim();
+    if (val.length){
+      loc.customContent = val;
+      overrides[loc.id] = val;
+    } else {
+      delete loc.customContent;
+      delete overrides[loc.id];
+    }
+    renderPopupView(wrapper, loc);
+    refreshPopup(loc);
+    persistOverrides();
+  });
+  const resetBtn = wrapper.querySelector(".pp-btn-reset");
+  if (resetBtn){
+    resetBtn.addEventListener("click", () => {
+      delete loc.customContent;
+      delete overrides[loc.id];
+      renderPopupView(wrapper, loc);
+      refreshPopup(loc);
+      persistOverrides();
+    });
+  }
+}
+
+function refreshPopup(loc){
+  const popup = loc.marker.getPopup();
+  if (popup) popup.update();
+}
+
+function makeIcon(color, catKey){
+  return L.divIcon({
+    className: "",
+    html: `<div class="divpin" style="background:${color}">${iconSvg(catKey, color, 15)}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16]
+  });
+}
+
+/* ======================= NOKTA SİLME ======================= */
+function deleteLocation(loc){
+  if (!confirm(`"${loc.name}" noktasını silmek istediğinize emin misiniz?`)) return;
+  if (loc.marker){
+    loc.marker.closePopup();
+    map.removeLayer(loc.marker);
+  }
+  const idx = LOCATIONS.findIndex(l => l.id === loc.id);
+  if (idx > -1) LOCATIONS.splice(idx, 1);
+  if (overrides[loc.id] !== undefined){
+    delete overrides[loc.id];
+    persistOverrides();
+  }
+  applyFilters();
+}
+
+/* ======================= YENİ NOKTA EKLEME (EL İLE İŞARETLEME) ======================= */
+let addMode = false;
+
+function setAddMode(on){
+  addMode = on;
+  const btn = document.getElementById("addPinBtn");
+  const banner = document.getElementById("addModeBanner");
+  const mapEl = document.getElementById("map");
+  btn.textContent = on ? "Eklemeyi Bitir" : "+ Nokta Ekle";
+  banner.style.display = on ? "flex" : "none";
+  mapEl.classList.toggle("add-mode-cursor", on);
+}
+
+function renderNewLocationForm(wrapper, latlng, tempMarker){
+  const catOptions = Object.entries(CATS).map(([key, c]) =>
+    `<option value="${key}">${c.label}</option>`
+  ).join("");
+
+  wrapper.innerHTML = `
+    <div class="pp-head"><div class="pp-title">Yeni Nokta Ekle</div></div>
+    <div class="pp-field">
+      <label>Nokta Adı</label>
+      <input type="text" class="pp-input" id="newLocName" placeholder="Örn. Köşe Başı Totem Alanı">
+    </div>
+    <div class="pp-field">
+      <label>Kategori</label>
+      <select class="pp-select" id="newLocCat">${catOptions}</select>
+    </div>
+    <div class="pp-field">
+      <label>Mahalle / Bölge</label>
+      <input type="text" class="pp-input" id="newLocNeighborhood" placeholder="Örn. Kayabaşı">
+    </div>
+    <div class="pp-field">
+      <label>İçerik Önerisi</label>
+      <textarea class="pp-edit-textarea" id="newLocContent" rows="2"></textarea>
+    </div>
+    <div class="pp-edit-actions">
+      <button type="button" class="pp-btn pp-btn-save" id="newLocSave">Kaydet</button>
+      <button type="button" class="pp-btn pp-btn-cancel" id="newLocCancel">Vazgeç</button>
+    </div>
+  `;
+
+  const catSelect = wrapper.querySelector("#newLocCat");
+  const contentArea = wrapper.querySelector("#newLocContent");
+  contentArea.value = CONTENT_SUGGESTION[catSelect.value];
+  catSelect.addEventListener("change", () => {
+    contentArea.value = CONTENT_SUGGESTION[catSelect.value];
+  });
+
+  wrapper.querySelector("#newLocCancel").addEventListener("click", () => {
+    map.removeLayer(tempMarker);
+  });
+
+  wrapper.querySelector("#newLocSave").addEventListener("click", () => {
+    const name = wrapper.querySelector("#newLocName").value.trim() || "Yeni Nokta";
+    const cat = catSelect.value;
+    const neighborhood = wrapper.querySelector("#newLocNeighborhood").value.trim() || "—";
+    const contentVal = contentArea.value.trim();
+
+    const newLoc = {
+      id: nextId(),
+      name, lat: latlng.lat, lng: latlng.lng, cat, neighborhood,
+      custom: true
+    };
+    if (contentVal && contentVal !== CONTENT_SUGGESTION[cat]) newLoc.customContent = contentVal;
+    newLoc.marker = tempMarker;
+
+    tempMarker.setIcon(makeIcon(CATS[cat].color, cat));
+    const viewWrapper = document.createElement("div");
+    renderPopupView(viewWrapper, newLoc);
+    tempMarker.unbindPopup();
+    tempMarker.bindPopup(viewWrapper, { className: "pin-popup", maxWidth: 270, minWidth: 230 });
+
+    LOCATIONS.push(newLoc);
+    applyFilters();
+    tempMarker.openPopup();
+  });
+}
+
+function openNewLocationForm(latlng){
+  const tempMarker = L.marker([latlng.lat, latlng.lng], { icon: makeIcon(CATS.sosyal.color, "sosyal") }).addTo(map);
+  const wrapper = document.createElement("div");
+  renderNewLocationForm(wrapper, latlng, tempMarker);
+  tempMarker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 270, minWidth: 240 });
+  tempMarker.openPopup();
+}
+
+document.getElementById("addPinBtn").addEventListener("click", () => setAddMode(!addMode));
+document.getElementById("cancelAddMode").addEventListener("click", () => setAddMode(false));
+map.on("click", e => {
+  if (!addMode) return;
+  openNewLocationForm(e.latlng);
+});
+
+/* ======================= KOORDİNATA GİT ======================= */
+function parseCoordinatesInput(text){
+  if (!text) return null;
+  let m = text.match(/@(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!m) m = text.match(/[?&](?:q|query|destination)=(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!m) m = text.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
+function targetIcon(){
+  return L.divIcon({
+    className: "",
+    html: `<div class="target-pin"><div class="target-pin-ring"></div><div class="target-pin-dot"></div></div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17]
+  });
+}
+
+let targetMarker = null;
+
+function goToCoordinate(lat, lng){
+  if (targetMarker){ map.removeLayer(targetMarker); targetMarker = null; }
+  map.flyTo([lat, lng], 17, { duration: 0.8 });
+
+  targetMarker = L.marker([lat, lng], { icon: targetIcon() }).addTo(map);
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = `
+    <div class="pp-head"><div class="pp-title">Yapıştırılan Koordinat</div></div>
+    <div class="pp-row"><b>Enlem / Boylam:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+    <div class="pp-edit-actions">
+      <button type="button" class="pp-btn pp-btn-save" id="addFromCoordBtn">Buraya Nokta Ekle</button>
+      <button type="button" class="pp-btn pp-btn-cancel" id="closeCoordBtn">Kapat</button>
+    </div>
+  `;
+  targetMarker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 250, minWidth: 220 });
+
+  wrapper.querySelector("#addFromCoordBtn").addEventListener("click", () => {
+    map.removeLayer(targetMarker);
+    targetMarker = null;
+    openNewLocationForm({ lat, lng });
+  });
+  wrapper.querySelector("#closeCoordBtn").addEventListener("click", () => {
+    if (targetMarker){ map.removeLayer(targetMarker); targetMarker = null; }
+  });
+
+  setTimeout(() => { if (targetMarker) targetMarker.openPopup(); }, 850);
+}
+
+function handleCoordGo(){
+  const input = document.getElementById("coordInput");
+  const parsed = parseCoordinatesInput(input.value);
+  if (!parsed){
+    input.classList.add("coord-error");
+    setTimeout(() => input.classList.remove("coord-error"), 1200);
+    return;
+  }
+  goToCoordinate(parsed.lat, parsed.lng);
+}
+
+document.getElementById("coordGoBtn").addEventListener("click", handleCoordGo);
+document.getElementById("coordInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") handleCoordGo();
+});
+
+/* ======================= GÜNCEL HALİNİ İNDİR ======================= */
+function exportCurrentVersion(){
+  const plain = LOCATIONS.map(loc => {
+    const out = { id: loc.id, name: loc.name, lat: loc.lat, lng: loc.lng, cat: loc.cat, neighborhood: loc.neighborhood };
+    if (loc.customContent !== undefined && loc.customContent !== null) out.customContent = loc.customContent;
+    if (loc.custom) out.custom = true;
+    return out;
+  });
+  const jsonLiteral = JSON.stringify(plain, null, 2);
+
+  const startMarker = "/* === LOCATIONS_START === */";
+  const endMarker = "/* === LOCATIONS_END === */";
+  const startIdx = ORIGINAL_SOURCE.indexOf(startMarker);
+  const endIdx = ORIGINAL_SOURCE.indexOf(endMarker);
+
+  if (startIdx === -1 || endIdx === -1){
+    alert("Dışa aktarma hazırlanırken bir sorun oluştu. Lütfen sayfayı yenileyip tekrar deneyin.");
+    return;
+  }
+
+  const before = ORIGINAL_SOURCE.slice(0, startIdx + startMarker.length);
+  const after = ORIGINAL_SOURCE.slice(endIdx);
+  const newSource = "<!DOCTYPE html>\n" + `${before}\nconst LOCATIONS = ${jsonLiteral};\n${after}`;
+
+  const blob = new Blob([newSource], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const ts = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `totem-harita-${ts}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("downloadBtn").addEventListener("click", exportCurrentVersion);
+
+/* ======================= PERSISTENT / SHARED STORAGE ======================= */
+const STORAGE_KEY = "content-overrides";
+const hasStorage = typeof window.storage !== "undefined";
+let overrides = {};
+
+async function loadOverrides(){
+  if (!hasStorage) return;
+  try {
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if (res && res.value) overrides = JSON.parse(res.value);
+  } catch (e){
+    overrides = {};
+  }
+  LOCATIONS.forEach(loc => {
+    if (overrides[loc.id] !== undefined) loc.customContent = overrides[loc.id];
+  });
+}
+
+async function persistOverrides(){
+  if (!hasStorage) return;
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(overrides), true);
+  } catch (e){
+    console.error("Kayıt hatası:", e);
+  }
+}
+
+/* ======================= MARKERS + POPUPS ======================= */
+async function initMarkers(){
+  await loadOverrides();
+  LOCATIONS.forEach(loc => {
+    const color = CATS[loc.cat].color;
+    loc.marker = L.marker([loc.lat, loc.lng], { icon: makeIcon(color, loc.cat) });
+    const wrapper = document.createElement("div");
+    renderPopupView(wrapper, loc);
+    loc.marker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 270, minWidth: 230 });
+    loc.marker.addTo(map);
+  });
+  applyFilters();
+}
+initMarkers();
+
+/* ======================= LEGEND ======================= */
+const legendEl = document.getElementById("mapLegend");
+legendEl.innerHTML = `<h4>Kategori Lejantı</h4>` + Object.entries(CATS).map(([key, c]) =>
+  `<div class="leg-row"><span class="cat-dot" style="background:${c.color}">${iconSvg(key, c.color, 11)}</span>${c.label}</div>`
+).join("");
+
+/* ======================= SIDEBAR: CATEGORY FILTERS ======================= */
+const categoryListEl = document.getElementById("categoryList");
+
+function renderCategoryFilters(){
+  categoryListEl.innerHTML = Object.entries(CATS).map(([key, c]) => {
+    const count = LOCATIONS.filter(l => l.cat === key).length;
+    const inactive = activeCats.has(key) ? "" : "inactive";
+    return `<div class="cat-row ${inactive}" data-cat="${key}" tabindex="0" role="checkbox" aria-checked="${activeCats.has(key)}">
+      <span class="cat-dot" style="background:${c.color}">${iconSvg(key, c.color, 13)}</span>
+      <span class="cat-label">${c.label}</span>
+      <span class="cat-count">${count}</span>
+    </div>`;
+  }).join("");
+
+  categoryListEl.querySelectorAll(".cat-row").forEach(row => {
+    const toggle = () => {
+      const key = row.dataset.cat;
+      if (activeCats.has(key)) activeCats.delete(key); else activeCats.add(key);
+      applyFilters();
+    };
+    row.addEventListener("click", toggle);
+    row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+  });
+}
+
+/* ======================= SEARCH ======================= */
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  applyFilters();
+});
+
+/* ======================= LOCATION LIST + FILTER LOGIC ======================= */
+const locationListEl = document.getElementById("locationList");
+const listMetaEl = document.getElementById("listMeta");
+const statVisibleEl = document.getElementById("statVisible");
+
+function matchesFilters(loc){
+  if (!activeCats.has(loc.cat)) return false;
+  if (searchTerm){
+    const hay = (loc.name + " " + loc.neighborhood).toLowerCase();
+    if (!hay.includes(searchTerm)) return false;
+  }
+  return true;
+}
+
+function renderLocationList(visible){
+  if (visible.length === 0){
+    locationListEl.innerHTML = `<div class="empty-state">Bu filtrelerle eşleşen nokta yok.</div>`;
+    return;
+  }
+  locationListEl.innerHTML = visible.map(loc => `
+    <div class="loc-card" data-id="${loc.id}" tabindex="0">
+      <div class="loc-top">
+        <span class="loc-dot" style="background:${CATS[loc.cat].color}">${iconSvg(loc.cat, CATS[loc.cat].color, 11)}</span>
+        <div>
+          <div class="loc-name">${loc.id}. ${loc.name}</div>
+          <div class="loc-sub">${loc.neighborhood} · ${CATS[loc.cat].label}</div>
+          <div class="loc-badges">${loc.custom ? '<span class="badge">Özel</span>' : ''}</div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  locationListEl.querySelectorAll(".loc-card").forEach(card => {
+    const focusLoc = () => {
+      const loc = LOCATIONS.find(l => l.id === Number(card.dataset.id));
+      map.flyTo([loc.lat, loc.lng], 16, { duration: 0.6 });
+      setTimeout(() => loc.marker.openPopup(), 350);
+    };
+    card.addEventListener("click", focusLoc);
+    card.addEventListener("keydown", e => { if (e.key === "Enter") focusLoc(); });
+  });
+}
+
+function applyFilters(){
+  const visible = LOCATIONS.filter(matchesFilters);
+  const visibleIds = new Set(visible.map(l => l.id));
+
+  LOCATIONS.forEach(loc => {
+    const onMap = map.hasLayer(loc.marker);
+    if (visibleIds.has(loc.id) && !onMap) loc.marker.addTo(map);
+    if (!visibleIds.has(loc.id) && onMap) map.removeLayer(loc.marker);
+  });
+
+  renderCategoryFilters();
+  renderLocationList(visible);
+  listMetaEl.textContent = `${visible.length} / ${LOCATIONS.length} nokta gösteriliyor`;
+  statVisibleEl.textContent = visible.length;
+  document.getElementById("statTotal").textContent = LOCATIONS.length;
+}
+
+/* ======================= SIDEBAR TOGGLE (Sunum Modu) ======================= */
+const sidebar = document.getElementById("sidebar");
+const toggleBtn = document.getElementById("toggleSidebar");
+toggleBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("collapsed");
+  toggleBtn.textContent = sidebar.classList.contains("collapsed") ? "Listeyi Göster" : "Sunum Modu";
+  setTimeout(() => map.invalidateSize(), 260);
+});
+
+</script></body></html>
