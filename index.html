@@ -1,1469 +1,3015 @@
 <!DOCTYPE html>
-<html lang="tr"><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Başakşehir Totem LED Ekran Yerleşim Önerisi</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<style>
-  :root{
-    --navy:#0B1F3A;
-    --navy-light:#142A4D;
-    --teal:#1C7293;
-    --cyan:#00C2D1;
-    --bg:#F4F7FA;
-    --white:#FFFFFF;
-    --text:#1C2530;
-    --muted:#6B7787;
-    --border:#E2E8F0;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:var(--bg);}
-  #app{height:100vh;display:flex;flex-direction:column;}
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Başakşehir 3D Dijital İkiz | Mapbox Standard</title>
 
-  /* ---------- HEADER ---------- */
-  .topbar{
-    background:var(--navy);
-    color:var(--white);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:14px 24px;
-    flex-shrink:0;
-    gap:20px;
-    z-index:500;
-  }
-  .brand{display:flex;align-items:center;gap:14px;min-width:0;}
-  .brand-mark{
-    display:grid;
-    grid-template-columns:repeat(3,8px);
-    grid-template-rows:repeat(3,8px);
-    gap:3px;
-    flex-shrink:0;
-  }
-  .brand-mark span{display:block;width:8px;height:8px;border-radius:2px;background:var(--cyan);}
-  .brand-mark span:nth-child(1){opacity:.35;}
-  .brand-mark span:nth-child(2){opacity:.9;}
-  .brand-mark span:nth-child(3){opacity:.5;}
-  .brand-mark span:nth-child(4){opacity:.6;}
-  .brand-mark span:nth-child(5){opacity:1;}
-  .brand-mark span:nth-child(6){opacity:.4;}
-  .brand-mark span:nth-child(7){opacity:.5;}
-  .brand-mark span:nth-child(8){opacity:.8;}
-  .brand-mark span:nth-child(9){opacity:.3;}
-  .brand-text h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.2px;line-height:1.25;}
-  .brand-text p{font-size:12px;margin:2px 0 0;color:#9FB3CC;}
-  .stats{display:flex;gap:22px;flex-shrink:0;}
-  .stat{text-align:center;}
-  .stat strong{display:block;font-size:20px;font-weight:700;color:var(--cyan);}
-  .stat span{display:block;font-size:10.5px;color:#9FB3CC;text-transform:uppercase;letter-spacing:.5px;margin-top:1px;}
-  .btn-ghost{
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.25);
-    color:var(--white);
-    padding:9px 16px;
-    border-radius:8px;
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-    white-space:nowrap;
-    transition:background .15s ease;
-  }
-  .btn-ghost:hover{background:rgba(255,255,255,0.18);}
-  .btn-ghost:focus-visible, .chip:focus-visible, .cat-row:focus-visible, .loc-card:focus-visible{outline:2px solid var(--cyan); outline-offset:2px;}
+  <!-- Mapbox GL JS v3 -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
 
-  /* ---------- LAYOUT ---------- */
-  .layout{flex:1;display:flex;min-height:0;}
-  #sidebar{
-    width:340px;
-    background:var(--white);
-    border-right:1px solid var(--border);
-    display:flex;
-    flex-direction:column;
-    flex-shrink:0;
-    transition:margin-left .25s ease;
-  }
-  #sidebar.collapsed{margin-left:-340px;}
-  #mapWrap{flex:1;position:relative;min-width:0;}
-  #map{position:absolute;inset:0;}
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-  /* ---------- SIDEBAR CONTENT ---------- */
-  .search-box{padding:16px 16px 8px;}
-  .search-box input{
-    width:100%;
-    padding:10px 12px;
-    border:1px solid var(--border);
-    border-radius:8px;
-    font-size:13.5px;
-    background:var(--bg);
-    color:var(--text);
-  }
-  .search-box input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
-  .coord-box{display:flex;gap:6px;padding:0 16px 14px;}
-  .coord-box input{
-    flex:1;min-width:0;
-    padding:9px 11px;
-    border:1px solid var(--border);
-    border-radius:8px;
-    font-size:12.5px;
-    background:var(--bg);
-    color:var(--text);
-  }
-  .coord-box input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
-  .coord-box input.coord-error{border-color:#C92A2A;background:#FFF1F1;}
-  .coord-go-btn{
-    background:var(--navy);color:var(--white);border:none;
-    border-radius:8px;padding:0 14px;font-size:12.5px;font-weight:700;
-    cursor:pointer;flex-shrink:0;
-  }
-  .coord-go-btn:hover{background:var(--navy-light);}
-  .coord-hint{font-size:10.5px;color:var(--muted);padding:0 16px 10px;margin-top:-8px;}
-  .filter-group{padding:10px 16px;border-bottom:1px solid var(--border);}
-  .filter-group h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px;font-weight:700;}
-  .chip-row{display:flex;gap:6px;flex-wrap:wrap;}
-  .chip{
-    border:1px solid var(--border);
-    background:var(--white);
-    color:var(--text);
-    font-size:12.5px;
-    font-weight:600;
-    padding:6px 12px;
-    border-radius:20px;
-    cursor:pointer;
-  }
-  .chip.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
-  #categoryList{display:flex;flex-direction:column;gap:6px;}
-  .cat-row{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:6px 8px;
-    border-radius:7px;
-    cursor:pointer;
-    font-size:13px;
-    user-select:none;
-  }
-  .cat-row:hover{background:var(--bg);}
-  .cat-row.inactive{opacity:.4;}
-  .cat-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .cat-dot svg{display:block;}
-  .cat-label{flex:1;}
-  .cat-count{font-size:11.5px;color:var(--muted);font-weight:600;}
-  .location-list{flex:1;overflow-y:auto;padding:8px 12px 16px;}
-  .list-meta{font-size:11.5px;color:var(--muted);padding:4px 8px 8px;}
-  .loc-card{
-    border:1px solid var(--border);
-    border-radius:9px;
-    padding:10px 11px;
-    margin-bottom:7px;
-    cursor:pointer;
-    background:var(--white);
-    transition:border-color .15s ease, background .15s ease;
-  }
-  .loc-card:hover{border-color:var(--teal);background:var(--bg);}
-  .loc-top{display:flex;align-items:flex-start;gap:8px;}
-  .loc-dot{width:20px;height:20px;border-radius:50%;margin-top:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .loc-dot svg{display:block;}
-  .loc-name{font-size:13.5px;font-weight:700;line-height:1.3;}
-  .loc-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
-  .loc-badges{display:flex;gap:6px;margin-top:6px;}
-  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--bg);color:var(--muted);}
-  .empty-state{padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;}
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; }
+    body, html { width:100%; height:100%; overflow:hidden; background:#0b0f19; color:#f8fafc; }
+    #app { display:flex; width:100vw; height:100vh; position:relative; }
+    #map { flex:1; height:100%; width:100%; cursor:default; }
+    #map.pick-crosshair { cursor:crosshair !important; }
 
-  /* ---------- MAP OVERLAYS ---------- */
-  .map-legend{
-    position:absolute;
-    bottom:18px;
-    left:18px;
-    background:rgba(255,255,255,0.96);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:12px 14px;
-    font-size:12px;
-    box-shadow:0 4px 14px rgba(11,31,58,0.12);
-    z-index:400;
-    max-width:230px;
-  }
-  .map-legend h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
-  .map-legend .leg-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
-  .map-legend .leg-row:last-child{margin-bottom:0;}
-  .map-legend .cat-dot{width:18px;height:18px;}
+    /* Glassmorphism Sidebar */
+    #sidebar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      bottom: 16px;
+      width: 400px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+    }
+    #sidebar-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, transparent 100%);
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.14);
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      margin-bottom: 6px;
+    }
+    #sidebar-header h1 { font-size: 1.2rem; font-weight: 800; color: #fff; line-height: 1.2; }
+    #sidebar-header p { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
 
-  .pin-popup .leaflet-popup-content-wrapper{border-radius:10px;}
-  .pin-popup .leaflet-popup-content{margin:14px 16px;min-width:210px;}
-  .pp-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
-  .pp-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .pp-title{font-size:14px;font-weight:700;margin:0;}
-  .pp-row{font-size:12px;color:var(--muted);margin:2px 0;}
-  .pp-row b{color:var(--text);}
-  .pp-suggestion{
-    margin-top:8px;
-    padding-top:8px;
-    border-top:1px solid var(--border);
-    font-size:12px;
-  }
-  .pp-sugg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;}
-  .pp-sugg-head b{color:var(--teal);font-size:11px;text-transform:uppercase;letter-spacing:.4px;}
-  .pp-edited-tag{font-size:10px;font-weight:600;color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0;margin-left:6px;}
-  .pp-edit-btn{
-    background:none;border:none;cursor:pointer;color:var(--muted);
-    padding:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .pp-edit-btn:hover{color:var(--teal);background:var(--bg);}
-  .pp-sugg-text{color:var(--text);line-height:1.4;}
-  .pp-edit-textarea{
-    width:100%;border:1px solid var(--border);border-radius:7px;
-    padding:7px 8px;font-size:12.5px;font-family:inherit;color:var(--text);
-    resize:vertical;margin-top:2px;
-  }
-  .pp-edit-textarea:focus{outline:2px solid var(--cyan);outline-offset:1px;}
-  .pp-edit-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-  .pp-btn{font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--white);cursor:pointer;color:var(--text);}
-  .pp-btn-save{background:var(--navy);color:var(--white);border-color:var(--navy);}
-  .pp-btn-save:hover{background:var(--navy-light);}
-  .pp-btn-cancel:hover{background:var(--bg);}
-  .pp-btn-reset{color:var(--muted);margin-left:auto;}
-  .pp-btn-reset:hover{color:var(--text);background:var(--bg);}
-  .pp-btn-delete{color:#C92A2A;border-color:#F1C2C2;}
-  .pp-btn-delete:hover{background:#FFF1F1;}
-  .pp-icon-btn{
-    background:none;border:none;cursor:pointer;color:var(--muted);
-    padding:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .pp-icon-btn:hover{color:#C92A2A;background:#FFF1F1;}
-  .pp-head-actions{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0;}
-  .pp-custom-tag{font-size:10px;font-weight:600;color:var(--muted);font-style:italic;margin-left:6px;}
-  .pp-field{margin-bottom:8px;}
-  .pp-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600;}
-  .pp-input, .pp-select{
-    width:100%;border:1px solid var(--border);border-radius:7px;
-    padding:7px 8px;font-size:12.5px;font-family:inherit;color:var(--text);background:var(--white);
-  }
-  .pp-input:focus, .pp-select:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+    /* Top Action Bar (Download JSON) */
+    .top-tools {
+      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(30, 41, 59, 0.35);
+    }
+    .btn-download-json {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-download-json:hover {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+    }
 
-  .add-mode-banner{
-    position:absolute;
-    top:16px;left:50%;
-    transform:translateX(-50%);
-    background:var(--navy);
-    color:var(--white);
-    padding:10px 16px;
-    border-radius:30px;
-    font-size:13px;
-    font-weight:600;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    box-shadow:0 6px 18px rgba(11,31,58,0.3);
-    z-index:450;
-  }
-  .add-mode-banner button{
-    background:rgba(255,255,255,0.15);
-    border:1px solid rgba(255,255,255,0.3);
-    color:var(--white);
-    font-size:12px;
-    font-weight:600;
-    padding:4px 10px;
-    border-radius:14px;
-    cursor:pointer;
-  }
-  .add-mode-banner button:hover{background:rgba(255,255,255,0.28);}
-  #map.add-mode-cursor{cursor:crosshair;}
+    /* Edit Drawer in Sidebar */
+    #edit-drawer {
+      display: none;
+      padding: 12px 16px;
+      background: rgba(2, 132, 199, 0.18);
+      border-bottom: 2px solid #0284c7;
+    }
+    #edit-drawer.show { display: block; }
+    .edit-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .edit-title-badge {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-close-edit {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-close-edit:hover { color: #fff; }
+    .edit-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .edit-group label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 3px;
+    }
+    .edit-group input {
+      width: 100%;
+      padding: 7px 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.78rem;
+      outline: none;
+    }
+    .edit-group input:focus { border-color: #38bdf8; }
+    .edit-btns-row { display: flex; gap: 6px; }
+    .btn-edit-ctl {
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: 0.15s;
+    }
+    .btn-save-point { background: #10b981; color: #fff; flex: 1; }
+    .btn-save-point:hover { background: #059669; }
+    .btn-pick-cross { background: #f59e0b; color: #fff; }
+    .btn-pick-cross.active { background: #ef4444; }
+    .btn-cancel-point { background: #475569; color: #cbd5e1; }
+    .btn-cancel-point:hover { background: #334155; }
 
-  .target-pin{width:34px;height:34px;position:relative;display:flex;align-items:center;justify-content:center;}
-  .target-pin-dot{width:12px;height:12px;border-radius:50%;background:var(--cyan);border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,194,209,0.45);z-index:2;}
-  .target-pin-ring{position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(0,194,209,0.35);animation:pulse-ring 1.4s ease-out infinite;}
-  @keyframes pulse-ring{
-    0%{transform:scale(0.3);opacity:0.85;}
-    100%{transform:scale(1.5);opacity:0;}
-  }
+    /* Lighting Modes */
+    .lighting-bar {
+      padding: 8px 16px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .btn-light {
+      padding: 6px 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(30, 41, 59, 0.6);
+      color: #cbd5e1;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: 0.2s;
+    }
+    .btn-light:hover { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .btn-light.active { background: #0284c7; color: #fff; border-color: #38bdf8; }
 
-  .divpin{
-    width:28px;height:28px;border-radius:50%;
-    border:2.5px solid #fff;
-    box-shadow:0 2px 6px rgba(0,0,0,0.35);
-    display:flex;align-items:center;justify-content:center;
-  }
-  .divpin svg{display:block;}
+    /* Search Box */
+    #search-box {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+    #search-input {
+      width: 100%;
+      padding: 9px 14px 9px 34px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      font-size: 0.8rem;
+      color: #fff;
+      outline: none;
+    }
+    #search-input:focus { border-color: #38bdf8; }
+    #search-box i {
+      position: absolute;
+      left: 26px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-size: 0.82rem;
+    }
 
-  @media (max-width: 880px){
-    #sidebar{position:absolute;top:0;left:0;height:100%;z-index:600;width:86vw;max-width:340px;box-shadow:0 0 24px rgba(0,0,0,0.25);}
-    #sidebar.collapsed{margin-left:-86vw;}
-    .stats{display:none;}
-  }
+    /* Tabs */
+    .tab-header {
+      display: flex;
+      padding: 6px 16px 0;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .tab-item {
+      padding: 8px 4px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      position: relative;
+    }
+    .tab-item.active { color: #38bdf8; }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0; right: 0;
+      height: 2px;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
+    }
 
-  @media print{
-    .topbar .btn-ghost, #sidebar{display:none !important;}
-    #app, .layout{height:100vh;}
-  }
-</style>
+    /* Scroll List */
+    #list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+    }
+    #list-container::-webkit-scrollbar { width: 5px; }
+    #list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+    .cat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .cat-row:hover { background: rgba(51, 65, 85, 0.6); transform: translateX(2px); }
+    .cat-row.inactive { opacity: 0.35; filter: grayscale(1); }
+    .cat-left { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; font-weight: 600; }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; flex-shrink: 0; }
+    .cat-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 12px; background: rgba(255,255,255,0.08); color:#94a3b8; }
+
+    .place-row {
+      padding: 9px 12px;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: 0.2s;
+    }
+    .place-row:hover { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); transform: translateX(3px); }
+    .place-left { flex: 1; }
+    .place-name { font-size: 0.82rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .place-meta { font-size: 0.7rem; color: #94a3b8; display: flex; gap: 8px; }
+    .btn-row-edit {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn-row-edit:hover { background: #0284c7; color: #fff; }
+
+    /* HUD Buttons (Top Right) */
+    #hud-tools {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    .hud-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: 0.2s;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .hud-btn:hover { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border-color: #38bdf8; transform: scale(1.05); }
+
+    /* 3D Pin Marker */
+    .marker-pin-3d {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 16px currentColor, 0 4px 12px rgba(0,0,0,0.7);
+      cursor: pointer !important;
+      pointer-events: auto !important;
+      display: block;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .marker-pin-3d:hover { transform: scale(1.4) translateY(-3px); }
+
+    /* Mapbox Popup Styling */
+    .mapboxgl-popup { z-index: 100 !important; }
+    .mapboxgl-popup-content {
+      background: rgba(15, 23, 42, 0.96) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(56, 189, 248, 0.45) !important;
+      border-radius: 14px !important;
+      padding: 16px !important;
+      color: #f1f5f9 !important;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.85) !important;
+      min-width: 250px !important;
+    }
+    .mapboxgl-popup-close-button {
+      color: #94a3b8 !important;
+      font-size: 16px !important;
+      padding: 6px !important;
+      right: 6px !important;
+      top: 6px !important;
+    }
+    .mapboxgl-popup-close-button:hover { color: #fff !important; }
+    .mapboxgl-popup-tip { border-top-color: rgba(15, 23, 42, 0.96) !important; }
+
+    /* Token Dialog */
+    #token-modal {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 200;
+      padding: 24px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    #token-modal.show { display: flex; }
+    .token-box {
+      max-width: 460px;
+      background: #1e293b;
+      padding: 28px;
+      border-radius: 16px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    }
+    .token-box h2 { font-size: 1.2rem; margin-bottom: 10px; color: #38bdf8; }
+    .token-box p { font-size: 0.82rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px; }
+    .token-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .token-btn {
+      width: 100%;
+      padding: 10px;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .token-btn:hover { background: #0369a1; }
+
+    /* Bottom Sheet Handle (Visible only on mobile) */
+    .sheet-handle {
+      display: none;
+      width: 42px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 10px;
+      margin: 8px auto 4px auto;
+      cursor: pointer;
+    }
+
+    /* Mobile Responsive Optimizations (Bottom Sheet Pattern) */
+    @media(max-width: 768px) {
+      .sheet-handle { display: block; }
+
+      #sidebar {
+        width: 100%;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        border-radius: 22px 22px 0 0;
+        height: 74px; /* Peek modu: Sadece başlık & sürükleme çubuğu */
+        transition: height 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+        z-index: 100;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7);
+      }
+
+      #sidebar.expanded {
+        height: 68vh; /* Açıldığında ekranın %68'ini kaplar */
+      }
+
+      #sidebar-header {
+        padding: 4px 18px 10px 18px;
+        cursor: pointer;
+      }
+      #sidebar-header h1 {
+        font-size: 1.05rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #sidebar-header h1::after {
+        content: '\f077';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        font-size: 0.85rem;
+        color: #38bdf8;
+        transition: transform 0.3s ease;
+      }
+      #sidebar.expanded #sidebar-header h1::after {
+        transform: rotate(180deg);
+      }
+
+      #hud-tools {
+        top: 12px;
+        right: 12px;
+        gap: 6px;
+      }
+      .hud-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+      }
+
+      /* Mobilde dokunma alanlarını büyüt */
+      .btn-light {
+        min-height: 42px;
+        font-size: 0.68rem;
+      }
+      .cat-row {
+        min-height: 44px;
+        padding: 10px 12px;
+      }
+      .place-row {
+        min-height: 46px;
+        padding: 10px 12px;
+      }
+      .btn-row-edit {
+        min-height: 36px;
+        padding: 6px 12px;
+        font-size: 0.75rem;
+      }
+
+      /* Mobilde popup genişliği */
+      .mapboxgl-popup {
+        max-width: 90vw !important;
+        z-index: 150 !important;
+      }
+      .mapboxgl-popup-content {
+        padding: 14px 14px 12px 14px !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">
-        <span></span><span></span><span></span>
-        <span></span><span></span><span></span>
-        <span></span><span></span><span></span>
-      </div>
-      <div class="brand-text">
-        <h1>Totem LED Ekran Yerleşim Önerisi</h1>
-        <p>Başakşehir Belediyesi · Proje Koordinasyon Birimi</p>
+  <div id="app">
+    <div id="map"></div>
+
+    <div id="token-modal">
+      <div class="token-box">
+        <h2>Mapbox Erişim Anahtarı (Token)</h2>
+        <p>Mapbox v3 Standard 3D motoru için public token gereklidir. <br><a href="https://account.mapbox.com/" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">mapbox.com</a> hesabınızdaki <code>pk.eyJ...</code> anahtarını girin.</p>
+        <input type="text" id="token-input" class="token-input" placeholder="pk.eyJ1...">
+        <button class="token-btn" onclick="saveToken()">Haritayı Başlat</button>
       </div>
     </div>
-    <div class="stats">
-      <div class="stat"><strong id="statTotal">59</strong><span>Nokta</span></div>
-      <div class="stat"><strong id="statVisible">59</strong><span>Görünen</span></div>
+
+    <div id="hud-tools">
+      <button class="hud-btn" onclick="togglePerspective()" title="3D / 2D Perspektif Değiştir"><i class="fa-solid fa-cube"></i></button>
+      <button class="hud-btn" onclick="rotateCamera()" title="Şehir Çevresinde Tur"><i id="orbit-icon" class="fa-solid fa-arrows-rotate"></i></button>
+      <button class="hud-btn" onclick="resetToBasaksehir()" title="Merkeze Dön"><i class="fa-solid fa-location-crosshairs"></i></button>
     </div>
-    <button class="btn-ghost" id="addPinBtn">+ Nokta Ekle</button>
-    <button class="btn-ghost" id="downloadBtn">Güncel Halini İndir</button>
-    <button class="btn-ghost" id="toggleSidebar">Sunum Modu</button>
-  </header>
 
-  <div class="layout">
-    <aside id="sidebar">
-      <div class="search-box">
-        <input id="searchInput" type="text" placeholder="Nokta veya mahalle ara…">
-      </div>
-      <div class="coord-box">
-        <input id="coordInput" type="text" placeholder="Koordinat yapıştır (örn. 41.0082, 28.9784)">
-        <button type="button" class="coord-go-btn" id="coordGoBtn">Git</button>
-      </div>
-      <div class="coord-hint">Google Maps'ten kopyaladığınız koordinatı veya bağlantıyı buraya yapıştırabilirsiniz</div>
-
-      <div class="filter-group">
-        <h3>Kategori</h3>
-        <div id="categoryList"></div>
+    <div id="sidebar">
+      <div class="sheet-handle" onclick="toggleMobileSidebar()"></div>
+      <div id="sidebar-header" onclick="toggleMobileSidebar()">
+        <div class="badge-pill"><i class="fa-solid fa-satellite"></i> Mapbox v3 Standard 3D</div>
+        <h1>Başakşehir Dijital İkiz</h1>
+        <p>3D Binalar • Dinamik Işıklandırma • 289 Tesis</p>
       </div>
 
-      <div class="list-meta" id="listMeta"></div>
-      <div class="location-list" id="locationList"></div>
-    </aside>
-
-    <main id="mapWrap">
-      <div id="map"></div>
-      <div class="map-legend" id="mapLegend"></div>
-      <div class="add-mode-banner" id="addModeBanner" style="display:none;">
-        <span>Haritada bir noktaya tıklayarak yeni pin ekleyin</span>
-        <button type="button" id="cancelAddMode">Vazgeç</button>
+      <!-- JSON İndir / Dışa Aktar -->
+      <div class="top-tools">
+        <button class="btn-download-json" onclick="downloadJSON()"><i class="fa-solid fa-file-arrow-down"></i> Güncel locations.json İndir</button>
       </div>
-    </main>
-  </div>
-</div>
 
-<script>
-/* Dışa aktarma (indirme) için sayfanın ilk/temiz halini en başta saklıyoruz */
-const ORIGINAL_SOURCE = document.documentElement.outerHTML;
-
-/* ======================= DATA ======================= */
-const CATS = {
-  metro:        { label: "Toplu Taşıma (Metro)",        color: "#2E86AB" },
-  yesil:        { label: "Yeşil Alan & Spor",            color: "#2F9E44" },
-  kamu:         { label: "Kamu, Kültür & Gençlik",       color: "#7048E8" },
-  ticaret:      { label: "Ticaret (AVM / Pazar)",        color: "#F08C00" },
-  sosyal:       { label: "Sosyal Alan (Meydan/Cami/Mahalle)", color: "#E64980" },
-  egitim_saglik:{ label: "Eğitim & Sağlık",              color: "#FA5252" },
-  kavsak:       { label: "Bağlantı Noktası (Kavşak)",    color: "#495057" }
-};
-
-const CONTENT_SUGGESTION = {
-  metro:        "Yönlendirme tabelası + güncel duyurular",
-  yesil:        "Etkinlik duyurusu + gençlik / aile içeriği",
-  kamu:         "Resmi duyuru + gençlik programları",
-  ticaret:      "Kampanya tanıtımı + genel bilgilendirme",
-  sosyal:       "Yerel duyuru + toplumsal etkinlik içeriği",
-  egitim_saglik:"Bilgilendirme + yönlendirme",
-  kavsak:       "Trafik / yönlendirme + genel duyuru"
-};
-
-/* ---- Kategori sembolleri (saf SVG, harici ikon kütüphanesi gerektirmez) ---- */
-const ICON_SHAPES = {
-  metro: bg => `
-    <rect x="4" y="5" width="16" height="10" rx="3" fill="#fff"/>
-    <rect x="7" y="7.4" width="4" height="3" rx="0.6" fill="${bg}"/>
-    <rect x="13" y="7.4" width="4" height="3" rx="0.6" fill="${bg}"/>
-    <circle cx="8" cy="17.3" r="1.7" fill="#fff"/>
-    <circle cx="16" cy="17.3" r="1.7" fill="#fff"/>
-  `,
-  yesil: () => `
-    <circle cx="12" cy="9.5" r="6" fill="#fff"/>
-    <rect x="10.6" y="14.3" width="2.8" height="6" rx="1" fill="#fff"/>
-  `,
-  kamu: bg => `
-    <polygon points="12,3 21,9.5 3,9.5" fill="#fff"/>
-    <rect x="4" y="9.5" width="16" height="9.5" rx="1" fill="#fff"/>
-    <rect x="6.8" y="11" width="1.6" height="6.5" fill="${bg}"/>
-    <rect x="11.2" y="11" width="1.6" height="6.5" fill="${bg}"/>
-    <rect x="15.6" y="11" width="1.6" height="6.5" fill="${bg}"/>
-  `,
-  ticaret: () => `
-    <path d="M8.5 9 C8.5 5.4 15.5 5.4 15.5 9" stroke="#fff" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-    <rect x="5.5" y="9" width="13" height="10.5" rx="1.6" fill="#fff"/>
-  `,
-  sosyal: () => `
-    <rect x="6.4" y="3.5" width="1.8" height="17" rx="0.6" fill="#fff"/>
-    <polygon points="8.2,5 18,8.3 8.2,11.6" fill="#fff"/>
-  `,
-  egitim_saglik: () => `
-    <rect x="10" y="5" width="4" height="14" rx="1" fill="#fff"/>
-    <rect x="5" y="10" width="14" height="4" rx="1" fill="#fff"/>
-  `,
-  kavsak: bg => `
-    <rect x="9.4" y="1" width="5.2" height="22" rx="1" fill="#fff"/>
-    <rect x="1" y="9.4" width="22" height="5.2" rx="1" fill="#fff"/>
-    <rect x="11.2" y="1.2" width="1.6" height="2.2" fill="${bg}"/>
-    <rect x="11.2" y="4.4" width="1.6" height="2.2" fill="${bg}"/>
-    <rect x="11.2" y="7.6" width="1.6" height="1.6" fill="${bg}"/>
-    <rect x="11.2" y="14.8" width="1.6" height="1.6" fill="${bg}"/>
-    <rect x="11.2" y="18.0" width="1.6" height="2.2" fill="${bg}"/>
-    <rect x="11.2" y="21.2" width="1.6" height="1.6" fill="${bg}"/>
-    <rect x="1.2" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
-    <rect x="4.4" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
-    <rect x="7.6" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
-    <rect x="14.8" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
-    <rect x="18.0" y="11.2" width="2.2" height="1.6" fill="${bg}"/>
-    <rect x="21.2" y="11.2" width="1.6" height="1.6" fill="${bg}"/>
-  `
-};
-
-function iconSvg(catKey, bgColor, size){
-  if (catKey === "kavsak"){
-    return `<img src="${KAVSAK_IMG}" width="${size}" height="${size}" style="display:block;border-radius:50%;object-fit:contain;" alt="">`;
-  }
-  const shapes = ICON_SHAPES[catKey](bgColor);
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${shapes}</svg>`;
-}
-
-const KAVSAK_IMG = "data:image/png;base64,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";
-
-const PENCIL_SVG = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
-const TRASH_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>`;
-
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
-}
-
-/* === LOCATIONS_START === */
-const LOCATIONS = [
-  {
-    "id": 37,
-    "name": "Köşe Başı",
-    "lat": 41.07273098249642,
-    "lng": 28.750920599490467,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 38,
-    "name": "Yeşil Vadi Caddesi",
-    "lat": 41.10929974732744,
-    "lng": 28.80335139256947,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 39,
-    "name": "Hürriyet Bulvarı",
-    "lat": 41.107452008084195,
-    "lng": 28.795184129222783,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 40,
-    "name": "SULAR VADİSİ",
-    "lat": 41.119507576381515,
-    "lng": 28.807256570327077,
-    "cat": "yesil",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 41,
-    "name": "2252. SK",
-    "lat": 41.0908425468357,
-    "lng": 28.721770640787714,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 42,
-    "name": "ALTINŞEHİR MİLLET BAHÇESİ",
-    "lat": 41.067924653563836,
-    "lng": 28.75875944282245,
-    "cat": "yesil",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 43,
-    "name": "Abdülhamit Han Camiii",
-    "lat": 41.13004336413853,
-    "lng": 28.78008301298644,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 44,
-    "name": "Azatlı Baruthanesi",
-    "lat": 41.088703937543684,
-    "lng": 28.74237138279772,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 45,
-    "name": "Başakşehir merkez camii",
-    "lat": 41.12083382636627,
-    "lng": 28.77301617266317,
-    "cat": "sosyal",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 46,
-    "name": "Kayaşehir Bulvarı",
-    "lat": 41.106007857192566,
-    "lng": 28.76772712608193,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 47,
-    "name": "2801.SK",
-    "lat": 41.089096135338046,
-    "lng": 28.675222524459343,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 48,
-    "name": "ESKİ EDİRNE ASFALTI",
-    "lat": 41.14368147117708,
-    "lng": 28.797364534499938,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 49,
-    "name": "Kayaşehir Fuar Sergi Alanı",
-    "lat": 41.105419599997305,
-    "lng": 28.759505513800995,
-    "cat": "kamu",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 50,
-    "name": "Çam Sakura M. Bahçesi",
-    "lat": 41.09857574273812,
-    "lng": 28.78191717284554,
-    "cat": "metro",
-    "neighborhood": "—",
-    "customContent": "Yönlendirme tabelası + güncel duyurular",
-    "custom": true
-  },
-  {
-    "id": 51,
-    "name": "Tulip Kavşak",
-    "lat": 41.108939836442495,
-    "lng": 28.78022158744102,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 52,
-    "name": "İSMEK KARŞISI",
-    "lat": 41.09583969239912,
-    "lng": 28.809695492380737,
-    "cat": "sosyal",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 53,
-    "name": "Lale Sokak",
-    "lat": 41.08275822602999,
-    "lng": 28.677015536785735,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 54,
-    "name": "Ali Soylu Caddesi",
-    "lat": 41.10473257207375,
-    "lng": 28.80848760965382,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 55,
-    "name": "ŞEHİT ERKAN GÖKDAŞ SOKAGI",
-    "lat": 41.06497918474416,
-    "lng": 28.74682891970512,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 56,
-    "name": "Mimar kemalletin caddesi",
-    "lat": 41.107725773425535,
-    "lng": 28.780832277955632,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 57,
-    "name": "avni akyol bulv",
-    "lat": 41.06946059499262,
-    "lng": 28.684107363268218,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 58,
-    "name": "Adnan Mendere Bulvarı",
-    "lat": 41.11913937303147,
-    "lng": 28.774060361696428,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 59,
-    "name": "Necmettin Erbakan Caddesi",
-    "lat": 41.105971666362706,
-    "lng": 28.790776106665636,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 60,
-    "name": "Ertuğrul Gazi Caddesi",
-    "lat": 41.09787510532639,
-    "lng": 28.80495605515452,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 61,
-    "name": "İkitelli-Gaziosmanpaşa Yolu",
-    "lat": 41.118148842067875,
-    "lng": 28.799824023024602,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 62,
-    "name": "Kayaşehir Bulvarı",
-    "lat": 41.11967829012026,
-    "lng": 28.766461149317514,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 63,
-    "name": "İstiklal Caddesi",
-    "lat": 41.13933063742423,
-    "lng": 28.769775360484186,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 64,
-    "name": "1117 Sokak",
-    "lat": 41.0880001760772,
-    "lng": 28.757891688598058,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 65,
-    "name": "Nedim Sokak",
-    "lat": 41.08460136939943,
-    "lng": 28.723566883570488,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 66,
-    "name": "Avni Akyol Bulvarı",
-    "lat": 41.07292302803717,
-    "lng": 28.692400667781886,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 67,
-    "name": "2801 Sokak",
-    "lat": 41.0859048260902,
-    "lng": 28.678198585249657,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 68,
-    "name": "Mustafa Kemal Atatürk Bulvarı",
-    "lat": 41.069328389646195,
-    "lng": 28.66621717515298,
-    "cat": "kavsak",
-    "neighborhood": "—",
-    "custom": true
-  },
-  {
-    "id": 69,
-    "name": "Bahçeşehir BKSM",
-    "lat": 41.06683875192738,
-    "lng": 28.691310882568363,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 70,
-    "name": "Bahçeşehir Gölet",
-    "lat": 41.067421152938444,
-    "lng": 28.69391798973084,
-    "cat": "yesil",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 71,
-    "name": "Bahçeşehir Millet Kütüphanesi",
-    "lat": 41.06250698255502,
-    "lng": 28.68418157100678,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 72,
-    "name": "Bahçeşehir Ek Hizmet Binası",
-    "lat": 41.062329013939035,
-    "lng": 28.684567809104923,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 73,
-    "name": "Bahçeşehir Ek Hizmet Binası",
-    "lat": 41.062191492405944,
-    "lng": 28.684860169887546,
-    "cat": "kamu",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 74,
-    "name": "Bahçeşehir Spor Merkezi",
-    "lat": 41.06832912200257,
-    "lng": 28.677446544170383,
-    "cat": "yesil",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 75,
-    "name": "Özdemir BAYRAKTAR Bilim Kültür ve Yaşam Parkı",
-    "lat": 41.07935923686784,
-    "lng": 28.663539290428165,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 76,
-    "name": "Başakşehir Millet Kıraathanesi",
-    "lat": 41.12036167961076,
-    "lng": 28.77028048038483,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 77,
-    "name": "Başakşehir Belediyesi Hizmet Binası",
-    "lat": 41.12088298918944,
-    "lng": 28.77129435539246,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 78,
-    "name": "Başakşehir Belediyesi Hizmet Binası",
-    "lat": 41.12148107569862,
-    "lng": 28.77102077007294,
-    "cat": "kamu",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 79,
-    "name": "Başakşehir Millet Bahçesi",
-    "lat": 41.11950696541152,
-    "lng": 28.774480819702152,
-    "cat": "yesil",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 80,
-    "name": "Kayaşehir Meydanı",
-    "lat": 41.1195493982939,
-    "lng": 28.771900534629825,
-    "cat": "sosyal",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 81,
-    "name": "Başakşehir Spor Parkı (Onurkent)",
-    "lat": 41.10674756802432,
-    "lng": 28.780352175235752,
-    "cat": "yesil",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 82,
-    "name": "Mehmet Emin Saraç Kültür Merkezi",
-    "lat": 41.09968781159448,
-    "lng": 28.78671705722809,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 83,
-    "name": "Güvercintepe Kültür ve Yaşam Merkezi",
-    "lat": 41.08232320153482,
-    "lng": 28.750925660133365,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 84,
-    "name": "Sezai Karakoç Gençlik Merkezi",
-    "lat": 41.085551870407905,
-    "lng": 28.752990961074833,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 85,
-    "name": "Sular Vadisi",
-    "lat": 41.1193766925875,
-    "lng": 28.807255458901068,
-    "cat": "yesil",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 86,
-    "name": "Başak Pazar",
-    "lat": 41.111161412501936,
-    "lng": 28.80945291533021,
-    "cat": "ticaret",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 87,
-    "name": "Sular Vadisi",
-    "lat": 41.104449643016885,
-    "lng": 28.806377649307255,
-    "cat": "yesil",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 88,
-    "name": "Kayaşehir Fuar Sergi Alanı",
-    "lat": 41.10528232170266,
-    "lng": 28.759605288505558,
-    "cat": "ticaret",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 89,
-    "name": "Kayaşehir Fuar Sergi Alanı",
-    "lat": 41.10530253221912,
-    "lng": 28.75929415225983,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 90,
-    "name": "Kayaşehir Kültür ve Yaşam Merkezi",
-    "lat": 41.105775456528676,
-    "lng": 28.76082837581635,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 91,
-    "name": "Fenertepe Kapalı Pazar",
-    "lat": 41.132948734286785,
-    "lng": 28.78080010414124,
-    "cat": "ticaret",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 92,
-    "name": "Necip Fazıl Kısakürek Kültür ve Yaşam Parkı",
-    "lat": 41.120495038269205,
-    "lng": 28.80598068237305,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 93,
-    "name": "Nikah Sarayı",
-    "lat": 41.117504506292086,
-    "lng": 28.798148632049564,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 94,
-    "name": "Nikah Sarayı",
-    "lat": 41.11734285203328,
-    "lng": 28.79850268363953,
-    "cat": "kamu",
-    "neighborhood": "OutDoor Led Ekran",
-    "custom": true
-  },
-  {
-    "id": 95,
-    "name": "Living Lab",
-    "lat": 41.09535012138266,
-    "lng": 28.803105354309086,
-    "cat": "kamu",
-    "neighborhood": "InDoor Led Ekran",
-    "custom": true
-  }
-];
-/* === LOCATIONS_END === */
-let runningId = Math.max(...LOCATIONS.map(l => l.id));
-function nextId(){ runningId += 1; return runningId; }
-
-/* ======================= STATE ======================= */
-let searchTerm = "";
-let activeCats = new Set(Object.keys(CATS));
-
-/* ======================= MAP INIT ======================= */
-const map = L.map("map", { zoomControl: true }).setView([41.092, 28.755], 12.5);
-
-/* Uydu görüntüsü (Esri World Imagery) */
-L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-  maxZoom: 19,
-  attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, GIS User Community"
-}).addTo(map);
-
-/* Yol/yer adı etiketleri */
-L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
-  maxZoom: 19,
-  pane: "overlayPane"
-}).addTo(map);
-
-function renderPopupView(wrapper, loc){
-  const color = CATS[loc.cat].color;
-  const isCustom = loc.customContent !== undefined && loc.customContent !== null;
-  const suggestion = isCustom ? loc.customContent : CONTENT_SUGGESTION[loc.cat];
-  wrapper.innerHTML = `
-    <div class="pp-head">
-      <span class="pp-icon" style="background:${color}">${iconSvg(loc.cat, color, 15)}</span>
-      <div class="pp-title">${loc.id}. ${loc.name}${loc.custom ? '<span class="pp-custom-tag">· kendi eklediğim</span>' : ''}</div>
-      ${loc.custom ? `<div class="pp-head-actions"><button type="button" class="pp-icon-btn" data-action="delete-loc" aria-label="Noktayı sil" title="Noktayı sil">${TRASH_SVG}</button></div>` : ''}
-    </div>
-    <div class="pp-row"><b>Kategori:</b> ${CATS[loc.cat].label}</div>
-    <div class="pp-row"><b>Mahalle / Bölge:</b> ${loc.neighborhood}</div>
-    <div class="pp-suggestion">
-      <div class="pp-sugg-head">
-        <span><b>İçerik Önerisi</b>${isCustom ? '<span class="pp-edited-tag">· düzenlendi</span>' : ''}</span>
-        <button type="button" class="pp-edit-btn" aria-label="İçerik önerisini düzenle" title="Düzenle">${PENCIL_SVG}</button>
-      </div>
-      <div class="pp-sugg-text">${escapeHtml(suggestion)}</div>
-    </div>
-  `;
-  wrapper.querySelector(".pp-edit-btn").addEventListener("click", () => {
-    renderPopupEdit(wrapper, loc);
-    refreshPopup(loc);
-  });
-  const delBtn = wrapper.querySelector('[data-action="delete-loc"]');
-  if (delBtn){
-    delBtn.addEventListener("click", () => deleteLocation(loc));
-  }
-}
-
-function renderPopupEdit(wrapper, loc){
-  const color = CATS[loc.cat].color;
-  const isCustom = loc.customContent !== undefined && loc.customContent !== null;
-  const current = isCustom ? loc.customContent : CONTENT_SUGGESTION[loc.cat];
-  wrapper.innerHTML = `
-    <div class="pp-head">
-      <span class="pp-icon" style="background:${color}">${iconSvg(loc.cat, color, 15)}</span>
-      <div class="pp-title">${loc.id}. ${loc.name}</div>
-    </div>
-    <div class="pp-row"><b>Kategori:</b> ${CATS[loc.cat].label}</div>
-    <div class="pp-row"><b>Mahalle / Bölge:</b> ${loc.neighborhood}</div>
-    <div class="pp-suggestion">
-      <div class="pp-sugg-head"><b>İçerik Önerisini Düzenle</b></div>
-      <textarea class="pp-edit-textarea" rows="3">${escapeHtml(current)}</textarea>
-      <div class="pp-edit-actions">
-        <button type="button" class="pp-btn pp-btn-save">Kaydet</button>
-        <button type="button" class="pp-btn pp-btn-cancel">Vazgeç</button>
-        ${isCustom ? '<button type="button" class="pp-btn pp-btn-reset">Varsayılana Dön</button>' : ''}
-      </div>
-    </div>
-  `;
-  const ta = wrapper.querySelector(".pp-edit-textarea");
-  ta.focus();
-  ta.setSelectionRange(ta.value.length, ta.value.length);
-
-  wrapper.querySelector(".pp-btn-cancel").addEventListener("click", () => {
-    renderPopupView(wrapper, loc);
-    refreshPopup(loc);
-  });
-  wrapper.querySelector(".pp-btn-save").addEventListener("click", () => {
-    const val = ta.value.trim();
-    if (val.length){
-      loc.customContent = val;
-      overrides[loc.id] = val;
-    } else {
-      delete loc.customContent;
-      delete overrides[loc.id];
-    }
-    renderPopupView(wrapper, loc);
-    refreshPopup(loc);
-    persistOverrides();
-  });
-  const resetBtn = wrapper.querySelector(".pp-btn-reset");
-  if (resetBtn){
-    resetBtn.addEventListener("click", () => {
-      delete loc.customContent;
-      delete overrides[loc.id];
-      renderPopupView(wrapper, loc);
-      refreshPopup(loc);
-      persistOverrides();
-    });
-  }
-}
-
-function refreshPopup(loc){
-  const popup = loc.marker.getPopup();
-  if (popup) popup.update();
-}
-
-function makeIcon(color, catKey){
-  return L.divIcon({
-    className: "",
-    html: `<div class="divpin" style="background:${color}">${iconSvg(catKey, color, 15)}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16]
-  });
-}
-
-/* ======================= NOKTA SİLME ======================= */
-function deleteLocation(loc){
-  if (!confirm(`"${loc.name}" noktasını silmek istediğinize emin misiniz?`)) return;
-  if (loc.marker){
-    loc.marker.closePopup();
-    map.removeLayer(loc.marker);
-  }
-  const idx = LOCATIONS.findIndex(l => l.id === loc.id);
-  if (idx > -1) LOCATIONS.splice(idx, 1);
-  if (overrides[loc.id] !== undefined){
-    delete overrides[loc.id];
-    persistOverrides();
-  }
-  applyFilters();
-}
-
-/* ======================= YENİ NOKTA EKLEME (EL İLE İŞARETLEME) ======================= */
-let addMode = false;
-
-function setAddMode(on){
-  addMode = on;
-  const btn = document.getElementById("addPinBtn");
-  const banner = document.getElementById("addModeBanner");
-  const mapEl = document.getElementById("map");
-  btn.textContent = on ? "Eklemeyi Bitir" : "+ Nokta Ekle";
-  banner.style.display = on ? "flex" : "none";
-  mapEl.classList.toggle("add-mode-cursor", on);
-}
-
-function renderNewLocationForm(wrapper, latlng, tempMarker){
-  const catOptions = Object.entries(CATS).map(([key, c]) =>
-    `<option value="${key}">${c.label}</option>`
-  ).join("");
-
-  wrapper.innerHTML = `
-    <div class="pp-head"><div class="pp-title">Yeni Nokta Ekle</div></div>
-    <div class="pp-field">
-      <label>Nokta Adı</label>
-      <input type="text" class="pp-input" id="newLocName" placeholder="Örn. Köşe Başı Totem Alanı">
-    </div>
-    <div class="pp-field">
-      <label>Kategori</label>
-      <select class="pp-select" id="newLocCat">${catOptions}</select>
-    </div>
-    <div class="pp-field">
-      <label>Mahalle / Bölge</label>
-      <input type="text" class="pp-input" id="newLocNeighborhood" placeholder="Örn. Kayabaşı">
-    </div>
-    <div class="pp-field">
-      <label>İçerik Önerisi</label>
-      <textarea class="pp-edit-textarea" id="newLocContent" rows="2"></textarea>
-    </div>
-    <div class="pp-edit-actions">
-      <button type="button" class="pp-btn pp-btn-save" id="newLocSave">Kaydet</button>
-      <button type="button" class="pp-btn pp-btn-cancel" id="newLocCancel">Vazgeç</button>
-    </div>
-  `;
-
-  const catSelect = wrapper.querySelector("#newLocCat");
-  const contentArea = wrapper.querySelector("#newLocContent");
-  contentArea.value = CONTENT_SUGGESTION[catSelect.value];
-  catSelect.addEventListener("change", () => {
-    contentArea.value = CONTENT_SUGGESTION[catSelect.value];
-  });
-
-  wrapper.querySelector("#newLocCancel").addEventListener("click", () => {
-    map.removeLayer(tempMarker);
-  });
-
-  wrapper.querySelector("#newLocSave").addEventListener("click", () => {
-    const name = wrapper.querySelector("#newLocName").value.trim() || "Yeni Nokta";
-    const cat = catSelect.value;
-    const neighborhood = wrapper.querySelector("#newLocNeighborhood").value.trim() || "—";
-    const contentVal = contentArea.value.trim();
-
-    const newLoc = {
-      id: nextId(),
-      name, lat: latlng.lat, lng: latlng.lng, cat, neighborhood,
-      custom: true
-    };
-    if (contentVal && contentVal !== CONTENT_SUGGESTION[cat]) newLoc.customContent = contentVal;
-    newLoc.marker = tempMarker;
-
-    tempMarker.setIcon(makeIcon(CATS[cat].color, cat));
-    const viewWrapper = document.createElement("div");
-    renderPopupView(viewWrapper, newLoc);
-    tempMarker.unbindPopup();
-    tempMarker.bindPopup(viewWrapper, { className: "pin-popup", maxWidth: 270, minWidth: 230 });
-
-    LOCATIONS.push(newLoc);
-    applyFilters();
-    tempMarker.openPopup();
-  });
-}
-
-function openNewLocationForm(latlng){
-  const tempMarker = L.marker([latlng.lat, latlng.lng], { icon: makeIcon(CATS.sosyal.color, "sosyal") }).addTo(map);
-  const wrapper = document.createElement("div");
-  renderNewLocationForm(wrapper, latlng, tempMarker);
-  tempMarker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 270, minWidth: 240 });
-  tempMarker.openPopup();
-}
-
-document.getElementById("addPinBtn").addEventListener("click", () => setAddMode(!addMode));
-document.getElementById("cancelAddMode").addEventListener("click", () => setAddMode(false));
-map.on("click", e => {
-  if (!addMode) return;
-  openNewLocationForm(e.latlng);
-});
-
-/* ======================= KOORDİNATA GİT ======================= */
-function parseCoordinatesInput(text){
-  if (!text) return null;
-  let m = text.match(/@(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)/);
-  if (!m) m = text.match(/[?&](?:q|query|destination)=(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)/);
-  if (!m) m = text.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
-  if (!m) return null;
-  const lat = parseFloat(m[1]);
-  const lng = parseFloat(m[2]);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
-}
-
-function targetIcon(){
-  return L.divIcon({
-    className: "",
-    html: `<div class="target-pin"><div class="target-pin-ring"></div><div class="target-pin-dot"></div></div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17]
-  });
-}
-
-let targetMarker = null;
-
-function goToCoordinate(lat, lng){
-  if (targetMarker){ map.removeLayer(targetMarker); targetMarker = null; }
-  map.flyTo([lat, lng], 17, { duration: 0.8 });
-
-  targetMarker = L.marker([lat, lng], { icon: targetIcon() }).addTo(map);
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = `
-    <div class="pp-head"><div class="pp-title">Yapıştırılan Koordinat</div></div>
-    <div class="pp-row"><b>Enlem / Boylam:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-    <div class="pp-edit-actions">
-      <button type="button" class="pp-btn pp-btn-save" id="addFromCoordBtn">Buraya Nokta Ekle</button>
-      <button type="button" class="pp-btn pp-btn-cancel" id="closeCoordBtn">Kapat</button>
-    </div>
-  `;
-  targetMarker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 250, minWidth: 220 });
-
-  wrapper.querySelector("#addFromCoordBtn").addEventListener("click", () => {
-    map.removeLayer(targetMarker);
-    targetMarker = null;
-    openNewLocationForm({ lat, lng });
-  });
-  wrapper.querySelector("#closeCoordBtn").addEventListener("click", () => {
-    if (targetMarker){ map.removeLayer(targetMarker); targetMarker = null; }
-  });
-
-  setTimeout(() => { if (targetMarker) targetMarker.openPopup(); }, 850);
-}
-
-function handleCoordGo(){
-  const input = document.getElementById("coordInput");
-  const parsed = parseCoordinatesInput(input.value);
-  if (!parsed){
-    input.classList.add("coord-error");
-    setTimeout(() => input.classList.remove("coord-error"), 1200);
-    return;
-  }
-  goToCoordinate(parsed.lat, parsed.lng);
-}
-
-document.getElementById("coordGoBtn").addEventListener("click", handleCoordGo);
-document.getElementById("coordInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") handleCoordGo();
-});
-
-/* ======================= GÜNCEL HALİNİ İNDİR ======================= */
-function exportCurrentVersion(){
-  const plain = LOCATIONS.map(loc => {
-    const out = { id: loc.id, name: loc.name, lat: loc.lat, lng: loc.lng, cat: loc.cat, neighborhood: loc.neighborhood };
-    if (loc.customContent !== undefined && loc.customContent !== null) out.customContent = loc.customContent;
-    if (loc.custom) out.custom = true;
-    return out;
-  });
-  const jsonLiteral = JSON.stringify(plain, null, 2);
-
-  const startMarker = "/* === LOCATIONS_START === */";
-  const endMarker = "/* === LOCATIONS_END === */";
-  const startIdx = ORIGINAL_SOURCE.indexOf(startMarker);
-  const endIdx = ORIGINAL_SOURCE.indexOf(endMarker);
-
-  if (startIdx === -1 || endIdx === -1){
-    alert("Dışa aktarma hazırlanırken bir sorun oluştu. Lütfen sayfayı yenileyip tekrar deneyin.");
-    return;
-  }
-
-  const before = ORIGINAL_SOURCE.slice(0, startIdx + startMarker.length);
-  const after = ORIGINAL_SOURCE.slice(endIdx);
-  const newSource = "<!DOCTYPE html>\n" + `${before}\nconst LOCATIONS = ${jsonLiteral};\n${after}`;
-
-  const blob = new Blob([newSource], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const ts = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `totem-harita-${ts}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-document.getElementById("downloadBtn").addEventListener("click", exportCurrentVersion);
-
-/* ======================= PERSISTENT / SHARED STORAGE ======================= */
-const STORAGE_KEY = "content-overrides";
-const hasStorage = typeof window.storage !== "undefined";
-let overrides = {};
-
-async function loadOverrides(){
-  if (!hasStorage) return;
-  try {
-    const res = await window.storage.get(STORAGE_KEY, true);
-    if (res && res.value) overrides = JSON.parse(res.value);
-  } catch (e){
-    overrides = {};
-  }
-  LOCATIONS.forEach(loc => {
-    if (overrides[loc.id] !== undefined) loc.customContent = overrides[loc.id];
-  });
-}
-
-async function persistOverrides(){
-  if (!hasStorage) return;
-  try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(overrides), true);
-  } catch (e){
-    console.error("Kayıt hatası:", e);
-  }
-}
-
-/* ======================= MARKERS + POPUPS ======================= */
-async function initMarkers(){
-  await loadOverrides();
-  LOCATIONS.forEach(loc => {
-    const color = CATS[loc.cat].color;
-    loc.marker = L.marker([loc.lat, loc.lng], { icon: makeIcon(color, loc.cat) });
-    const wrapper = document.createElement("div");
-    renderPopupView(wrapper, loc);
-    loc.marker.bindPopup(wrapper, { className: "pin-popup", maxWidth: 270, minWidth: 230 });
-    loc.marker.addTo(map);
-  });
-  applyFilters();
-}
-initMarkers();
-
-/* ======================= LEGEND ======================= */
-const legendEl = document.getElementById("mapLegend");
-legendEl.innerHTML = `<h4>Kategori Lejantı</h4>` + Object.entries(CATS).map(([key, c]) =>
-  `<div class="leg-row"><span class="cat-dot" style="background:${c.color}">${iconSvg(key, c.color, 11)}</span>${c.label}</div>`
-).join("");
-
-/* ======================= SIDEBAR: CATEGORY FILTERS ======================= */
-const categoryListEl = document.getElementById("categoryList");
-
-function renderCategoryFilters(){
-  categoryListEl.innerHTML = Object.entries(CATS).map(([key, c]) => {
-    const count = LOCATIONS.filter(l => l.cat === key).length;
-    const inactive = activeCats.has(key) ? "" : "inactive";
-    return `<div class="cat-row ${inactive}" data-cat="${key}" tabindex="0" role="checkbox" aria-checked="${activeCats.has(key)}">
-      <span class="cat-dot" style="background:${c.color}">${iconSvg(key, c.color, 13)}</span>
-      <span class="cat-label">${c.label}</span>
-      <span class="cat-count">${count}</span>
-    </div>`;
-  }).join("");
-
-  categoryListEl.querySelectorAll(".cat-row").forEach(row => {
-    const toggle = () => {
-      const key = row.dataset.cat;
-      if (activeCats.has(key)) activeCats.delete(key); else activeCats.add(key);
-      applyFilters();
-    };
-    row.addEventListener("click", toggle);
-    row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-  });
-}
-
-/* ======================= SEARCH ======================= */
-document.getElementById("searchInput").addEventListener("input", e => {
-  searchTerm = e.target.value.trim().toLowerCase();
-  applyFilters();
-});
-
-/* ======================= LOCATION LIST + FILTER LOGIC ======================= */
-const locationListEl = document.getElementById("locationList");
-const listMetaEl = document.getElementById("listMeta");
-const statVisibleEl = document.getElementById("statVisible");
-
-function matchesFilters(loc){
-  if (!activeCats.has(loc.cat)) return false;
-  if (searchTerm){
-    const hay = (loc.name + " " + loc.neighborhood).toLowerCase();
-    if (!hay.includes(searchTerm)) return false;
-  }
-  return true;
-}
-
-function renderLocationList(visible){
-  if (visible.length === 0){
-    locationListEl.innerHTML = `<div class="empty-state">Bu filtrelerle eşleşen nokta yok.</div>`;
-    return;
-  }
-  locationListEl.innerHTML = visible.map(loc => `
-    <div class="loc-card" data-id="${loc.id}" tabindex="0">
-      <div class="loc-top">
-        <span class="loc-dot" style="background:${CATS[loc.cat].color}">${iconSvg(loc.cat, CATS[loc.cat].color, 11)}</span>
-        <div>
-          <div class="loc-name">${loc.id}. ${loc.name}</div>
-          <div class="loc-sub">${loc.neighborhood} · ${CATS[loc.cat].label}</div>
-          <div class="loc-badges">${loc.custom ? '<span class="badge">Özel</span>' : ''}</div>
+      <!-- Canlı Düzenleme Çekmecesi -->
+      <div id="edit-drawer">
+        <div class="edit-header-row">
+          <span class="edit-title-badge"><i class="fa-solid fa-pen-to-square"></i> <span id="edit-name-display">Konum Düzenleniyor</span></span>
+          <button class="btn-close-edit" onclick="closeEditPanel()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="edit-inputs-grid">
+          <div class="edit-group">
+            <label>Enlem (Latitude)</label>
+            <input type="number" step="0.000001" id="edit-lat-val">
+          </div>
+          <div class="edit-group">
+            <label>Boylam (Longitude)</label>
+            <input type="number" step="0.000001" id="edit-lng-val">
+          </div>
+        </div>
+        <div class="edit-btns-row">
+          <button id="btn-pick-cross" class="btn-edit-ctl btn-pick-cross" onclick="toggleCrosshairPick()"><i class="fa-solid fa-crosshairs"></i> Haritadan Tıkla</button>
+          <button class="btn-edit-ctl btn-save-point" onclick="savePointChanges()"><i class="fa-solid fa-check"></i> Kaydet</button>
+          <button class="btn-edit-ctl btn-cancel-point" onclick="closeEditPanel()">Vazgeç</button>
         </div>
       </div>
+
+      <!-- Işıklandırma Modları -->
+      <div class="lighting-bar">
+        <button class="btn-light active" onclick="setLighting('dusk')"><i class="fa-solid fa-cloud-sun"></i> Alacakaranlık</button>
+        <button class="btn-light" onclick="setLighting('night')"><i class="fa-solid fa-moon"></i> Gece</button>
+        <button class="btn-light" onclick="setLighting('day')"><i class="fa-solid fa-sun"></i> Gündüz</button>
+        <button class="btn-light" onclick="setLighting('dawn')"><i class="fa-solid fa-mountain-sun"></i> Şafak</button>
+      </div>
+
+      <div id="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="search-input" placeholder="Tesis, okul, cami, metro ara...">
+      </div>
+
+      <div class="tab-header">
+        <button id="tab-cat-btn" class="tab-item active" onclick="switchTab('cat')">Kategoriler</button>
+        <button id="tab-place-btn" class="tab-item" onclick="switchTab('place')">Tesis Listesi (<span id="count-badge">289</span>)</button>
+      </div>
+
+      <div id="list-container">
+        <div id="cat-view"></div>
+        <div id="place-view" style="display:none;"></div>
+      </div>
     </div>
-  `).join("");
+  </div>
 
-  locationListEl.querySelectorAll(".loc-card").forEach(card => {
-    const focusLoc = () => {
-      const loc = LOCATIONS.find(l => l.id === Number(card.dataset.id));
-      map.flyTo([loc.lat, loc.lng], 16, { duration: 0.6 });
-      setTimeout(() => loc.marker.openPopup(), 350);
+  <script>
+    const DEFAULT_TOKEN = "YOUR_MAPBOX_ACCESS_TOKEN";
+    let userToken = localStorage.getItem('mapbox_token') || (DEFAULT_TOKEN !== "YOUR_MAPBOX_ACCESS_TOKEN" ? DEFAULT_TOKEN : null);
+
+    const categoryColors = {
+      "Kültür ve Yaşam Merkezleri": "#38bdf8", "Spor Merkezleri": "#f97316",
+      "Alışveriş Alanları": "#a855f7", "Millet Kütüphaneleri": "#fb923c",
+      "Hizmet Binaları": "#0284c7", "Yeşil Alanlar": "#22c55e",
+      "Stadyumlar": "#10b981", "Hastaneler": "#ef4444",
+      "Hayvan Hastanesi": "#ec4899", "İSKİ": "#06b6d4",
+      "İGDAŞ": "#3b82f6", "BEDAŞ": "#eab308", "Living Lab": "#64748b",
+      "Bizim Çınarlar Yaşam Merkezi": "#14b8a6", "U Metro": "#f43f5e",
+      "M Metro": "#3b82f6", "Tarihi Alanlar": "#b45309",
+      "Üniversiteler": "#d97706", "VR Tema Park": "#06b6d4",
+      "Hızlı Oto Yıkama Alanı": "#0ea5e9", "Cemevleri": "#dc2626",
+      "Polis Merkezleri": "#f43f5e", "İtfaiye İstasyonları": "#e11d48",
+      "Eğitim Noktaları": "#94a3b8", "Camiler": "#eab308"
     };
-    card.addEventListener("click", focusLoc);
-    card.addEventListener("keydown", e => { if (e.key === "Enter") focusLoc(); });
-  });
-}
 
-function applyFilters(){
-  const visible = LOCATIONS.filter(matchesFilters);
-  const visibleIds = new Set(visible.map(l => l.id));
+    // 289 noktanın tamamı (Doğrulanmış ve Gömülü)
+    let allPoints = [
+      {
+            "name": "Altınşehir Oto Yıkama Alanı",
+            "cat": "Hızlı Oto Yıkama Alanı",
+            "lat": 41.06636638976423,
+            "lng": 28.758780552640655,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir Mahallesi Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 40.22568390241603,
+            "lng": 28.918011981683748,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.06810946958902,
+            "lng": 28.752394035135826,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.06635301445554,
+            "lng": 28.758686732335793,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir Millet Bahçesi Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.06628535167918,
+            "lng": 28.759142900201514,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.066320676270166,
+            "lng": 28.748110687565568,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Altınşehir Yarımburgaz Mağaraları",
+            "cat": "Tarihi Alanlar",
+            "lat": 41.074544552454675,
+            "lng": 28.744193995025828,
+            "mah": "Altınşehir / Yarımburgaz"
+      },
+      {
+            "name": "Altınşehir Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.06381568586294,
+            "lng": 28.74738715047777,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Derviş Ağa Camii",
+            "cat": "Camiler",
+            "lat": 41.07320839754934,
+            "lng": 28.68247137017103,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Hacı Ahmet Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.071934734895606,
+            "lng": 28.728997715279128,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Hz. İsmail Camii",
+            "cat": "Camiler",
+            "lat": 41.138837831863995,
+            "lng": 28.776310478129062,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "İmamoğulları Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.07629351190523,
+            "lng": 28.750442538637262,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Başakşehir Nene Hatun İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11042242507549,
+            "lng": 28.782914698354475,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08702817358414,
+            "lng": 28.805981954728765,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Mehmet Yaren Gümeli İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.0855372660077,
+            "lng": 28.78328877043075,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Şehit Polis Mustafa Erdoğan Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10418425223915,
+            "lng": 28.805899111847737,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Karacaören Köyü Velibaba Cemevi",
+            "cat": "Cemevleri",
+            "lat": 41.06957166880834,
+            "lng": 28.730638730885904,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "İbn Haldun Üniversitesi Metro",
+            "cat": "U Metro",
+            "lat": 41.13961632206352,
+            "lng": 28.794092090824144,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Kayaşehir Metro",
+            "cat": "U Metro",
+            "lat": 41.11901291300916,
+            "lng": 28.766569341898574,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Kayaşehir Merkez Metro",
+            "cat": "U Metro",
+            "lat": 41.11843183985219,
+            "lng": 28.766665756962265,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Olimpiyatköy Metro",
+            "cat": "U Metro",
+            "lat": 41.0794244690903,
+            "lng": 28.7685617049807,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Onurkent Metro",
+            "cat": "U Metro",
+            "lat": 41.11343039773047,
+            "lng": 28.791271899668335,
+            "mah": "Başakşehir 5. Etap / Onurkent"
+      },
+      {
+            "name": "Şehir Hastanesi Metro",
+            "cat": "U Metro",
+            "lat": 41.10328796776582,
+            "lng": 28.777806637920193,
+            "mah": "Başakşehir / Şehir Hastanesi"
+      },
+      {
+            "name": "Toplu Konutlar Metro",
+            "cat": "U Metro",
+            "lat": 41.10762949937507,
+            "lng": 28.767997264503904,
+            "mah": "Kayabaşı 15. Bölge"
+      },
+      {
+            "name": "Başak Konutları Metro",
+            "cat": "M Metro",
+            "lat": 41.09715630244469,
+            "lng": 28.790955127664304,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "İkitelli Sanayi Metro",
+            "cat": "M Metro",
+            "lat": 41.0713265684243,
+            "lng": 28.80381644702567,
+            "mah": "Ziya Gökalp / İkitelli OSB"
+      },
+      {
+            "name": "MASKO Metro",
+            "cat": "M Metro",
+            "lat": 41.06423359693512,
+            "lng": 28.804042472261475,
+            "mah": "Ziya Gökalp / MASKO"
+      },
+      {
+            "name": "Metrokent Metro",
+            "cat": "M Metro",
+            "lat": 41.107723869504945,
+            "lng": 28.801277519644042,
+            "mah": "Başakşehir 5. Etap"
+      },
+      {
+            "name": "Olimpiyat Metro",
+            "cat": "M Metro",
+            "lat": 41.07953510647216,
+            "lng": 28.768880679671327,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Siteler Metro",
+            "cat": "M Metro",
+            "lat": 41.088056253321746,
+            "lng": 28.79680332538713,
+            "mah": "Başakşehir Sanayi"
+      },
+      {
+            "name": "Turgut Özal Metro",
+            "cat": "M Metro",
+            "lat": 41.08089403358502,
+            "lng": 28.797587688858588,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Ziya Gökalp Metro",
+            "cat": "M Metro",
+            "lat": 41.074543712352124,
+            "lng": 28.786576816705765,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Başakşehir Çam ve Sakura Şehir Hastanesi",
+            "cat": "Hastaneler",
+            "lat": 41.104438580520316,
+            "lng": 28.77779264586196,
+            "mah": "Başakşehir / Kayabaşı"
+      },
+      {
+            "name": "Başakşehir Devlet Hastanesi",
+            "cat": "Hastaneler",
+            "lat": 41.11850441594058,
+            "lng": 28.808896203572665,
+            "mah": "Başak Mahallesi 4. Etap"
+      },
+      {
+            "name": "Başakşehir Güvercintepe Hatice-Haydar Aslan Semt Polikliniği",
+            "cat": "Hastaneler",
+            "lat": 41.07422926300772,
+            "lng": 28.747887883424127,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Başakşehir Belediyesi Hizmet Binası",
+            "cat": "Hizmet Binaları",
+            "lat": 41.12061211374754,
+            "lng": 28.770968433955915,
+            "mah": "Kayabaşı / Temmuz Sokak"
+      },
+      {
+            "name": "Başakşehir Kaymakamlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.11921856524879,
+            "lng": 28.803438400026106,
+            "mah": "Kayabaşı / 15 Temmuz Meydanı"
+      },
+      {
+            "name": "Başakşehir İlçe Emniyet Müdürlüğü",
+            "cat": "Polis Merkezleri",
+            "lat": 41.10458884536801,
+            "lng": 28.801971466832654,
+            "mah": "Başakşehir 5. Etap"
+      },
+      {
+            "name": "Başakşehir İlçe Milli Eğitim Müdürlüğü",
+            "cat": "Hizmet Binaları",
+            "lat": 41.101097401567294,
+            "lng": 28.804228656651073,
+            "mah": "Başakşehir 5. Etap"
+      },
+      {
+            "name": "Başakşehir İlçe Sağlık Müdürlüğü",
+            "cat": "Hizmet Binaları",
+            "lat": 41.107351168576436,
+            "lng": 28.789898363172238,
+            "mah": "Başak Mahallesi 4. Etap"
+      },
+      {
+            "name": "Tapu ve Kadastro Müdürlüğü",
+            "cat": "Hizmet Binaları",
+            "lat": 41.10100483611543,
+            "lng": 28.804169277844014,
+            "mah": "Başakşehir 5. Etap"
+      },
+      {
+            "name": "Başakşehir Nikah Salonu",
+            "cat": "Hizmet Binaları",
+            "lat": 41.117465408563895,
+            "lng": 28.798985049914467,
+            "mah": "Sular Vadisi / Başak"
+      },
+      {
+            "name": "Bahçeşehir Ek Hizmet Binası",
+            "cat": "Hizmet Binaları",
+            "lat": 41.06230018417562,
+            "lng": 28.68462969177881,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir Belediyesi Ek Hizmet Binaları",
+            "cat": "Hizmet Binaları",
+            "lat": 41.091835872220344,
+            "lng": 28.78179203143709,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Bahçeşehir 1. Kısım Mahalle Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.06252002083007,
+            "lng": 28.689200041196454,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir 2. Kısım Mahalle Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.06291273199022,
+            "lng": 28.68379581853353,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Başak Mahallesi Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.10124221813355,
+            "lng": 28.8048198262584,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Güvercintepe Mahallesi Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.0733373857776,
+            "lng": 28.750377310087963,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Kayabaşı Mahalle Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.105098327811014,
+            "lng": 28.76029265588256,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Şahintepe Mahallesi Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.07228699791134,
+            "lng": 28.72634057327083,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Ziya Gökalp Mahalle Muhtarlığı",
+            "cat": "Hizmet Binaları",
+            "lat": 41.07697778379017,
+            "lng": 28.787026644427897,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Bahçeşehir Polis Merkezi Amirliği",
+            "cat": "Polis Merkezleri",
+            "lat": 41.07525399987194,
+            "lng": 28.69193193317113,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Güvercintepe Polis Merkezi Amirliği",
+            "cat": "Polis Merkezleri",
+            "lat": 41.073182364997805,
+            "lng": 28.749944356060663,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Kayaşehir Polis Merkezi",
+            "cat": "Polis Merkezleri",
+            "lat": 41.10398901613689,
+            "lng": 28.763492991983306,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Şehit Erdem Özçelik Kalekolu",
+            "cat": "Polis Merkezleri",
+            "lat": 41.0830975144865,
+            "lng": 28.722881204042572,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Bahçeşehir İtfaiye İstasyonu",
+            "cat": "İtfaiye İstasyonları",
+            "lat": 41.07057774111764,
+            "lng": 28.676262169888556,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir İtfaiye Amirliği",
+            "cat": "İtfaiye İstasyonları",
+            "lat": 41.104378577429394,
+            "lng": 28.800515562851036,
+            "mah": "Başak Mahallesi / İkitelli"
+      },
+      {
+            "name": "Atatürk Olimpiyat Stadyumu",
+            "cat": "Stadyumlar",
+            "lat": 41.07441252080701,
+            "lng": 28.76624702843077,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Başakşehir Fatih Terim Stadyumu",
+            "cat": "Stadyumlar",
+            "lat": 41.122855502824024,
+            "lng": 28.809108925563613,
+            "mah": "Başak Mahallesi 4. Etap"
+      },
+      {
+            "name": "Şehit Erdem Özçelik Stadyumu",
+            "cat": "Stadyumlar",
+            "lat": 41.123183445280766,
+            "lng": 28.748379391860595,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "İSKİ Başakşehir Şube Müdürlüğü",
+            "cat": "İSKİ",
+            "lat": 41.07255324423785,
+            "lng": 28.748699827375336,
+            "mah": "Başak Mahallesi 2. Etap"
+      },
+      {
+            "name": "İGDAŞ Başakşehir Hizmet Binası",
+            "cat": "İGDAŞ",
+            "lat": 41.09478935256853,
+            "lng": 28.789877971743618,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Başakşehir Elektrik İdaresi (BEDAŞ)",
+            "cat": "BEDAŞ",
+            "lat": 41.09475497370163,
+            "lng": 28.78935203552794,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Başakşehir LIVING LAB",
+            "cat": "Living Lab",
+            "lat": 41.09536351010832,
+            "lng": 28.803272429560202,
+            "mah": "Başakşehir 5. Etap"
+      },
+      {
+            "name": "Başakşehir Belediyesi Hayvan Hastanesi",
+            "cat": "Hayvan Hastanesi",
+            "lat": 41.09438412140917,
+            "lng": 28.734779831166446,
+            "mah": "Kayabaşı / Şamlar yolu"
+      },
+      {
+            "name": "İbn Haldun Üniversitesi",
+            "cat": "Üniversiteler",
+            "lat": 41.138094710226035,
+            "lng": 28.79612198046791,
+            "mah": "Kayabaşı / Fenertepe"
+      },
+      {
+            "name": "Başakşehir VR Tema Park",
+            "cat": "VR Tema Park",
+            "lat": 41.12040393563901,
+            "lng": 28.770183059313826,
+            "mah": "Sular Vadisi"
+      },
+      {
+            "name": "Başakşehir Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.119630225611836,
+            "lng": 28.778327438688326,
+            "mah": "Kayabaşı / Başakşehir"
+      },
+      {
+            "name": "Bahçeşehir Gölet",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.06854635063643,
+            "lng": 28.692587581464824,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Sular Vadisi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.120030164513146,
+            "lng": 28.81008991170956,
+            "mah": "Başak Mahallesi 5. Etap"
+      },
+      {
+            "name": "Çam ve Sakura Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.0991238930848,
+            "lng": 28.7822601592763,
+            "mah": "Şehir Hastanesi Yanı"
+      },
+      {
+            "name": "Kayapark Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.10355935230484,
+            "lng": 28.765843004817462,
+            "mah": "Kayaşehir 4. Bölge"
+      },
+      {
+            "name": "Ayazma Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.06891287493775,
+            "lng": 28.77451424426257,
+            "mah": "Ziya Gökalp / Ayazma"
+      },
+      {
+            "name": "Güvercintepe Millet Bahçesi",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.07698115737727,
+            "lng": 28.759482960012814,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Boğazköy Parkı",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.07667103060669,
+            "lng": 28.665756864875984,
+            "mah": "Boğazköy"
+      },
+      {
+            "name": "4. Etap Yürüyüş Yolu",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.10620879150094,
+            "lng": 28.811980473093357,
+            "mah": "Başakşehir 4. Etap"
+      },
+      {
+            "name": "Şamlar Tabiat Parkı 5. Kapı Etkinlik Alanı",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.14472593616754,
+            "lng": 28.776098327486537,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Şamlar Tabiat Parkı 6. Kapı Etkinlik Alanı",
+            "cat": "Yeşil Alanlar",
+            "lat": 41.14786272701646,
+            "lng": 28.779245830810584,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Baruthane",
+            "cat": "Tarihi Alanlar",
+            "lat": 41.087640069795334,
+            "lng": 28.74138071466475,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Şamlar Bendi",
+            "cat": "Tarihi Alanlar",
+            "lat": 41.13636102610413,
+            "lng": 28.738146029335113,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Bahçeşehir Bizim Çınarlar Yaşam Merkezi",
+            "cat": "Bizim Çınarlar Yaşam Merkezi",
+            "lat": 41.07014553926916,
+            "lng": 28.678038394889654,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Çam ve Sakura Bizim Çınarlar Yaşam Merkezi",
+            "cat": "Bizim Çınarlar Yaşam Merkezi",
+            "lat": 41.09387439197452,
+            "lng": 28.781571795199397,
+            "mah": "Şehir Hastanesi Yanı"
+      },
+      {
+            "name": "Kayapark Bizim Çınarlar Yaşam Merkezi",
+            "cat": "Bizim Çınarlar Yaşam Merkezi",
+            "lat": 41.10740416849798,
+            "lng": 28.76595270263054,
+            "mah": "Kayaşehir 4. Bölge"
+      },
+      {
+            "name": "Sular Vadisi Bizim Çınarlar Yaşam Merkezi",
+            "cat": "Bizim Çınarlar Yaşam Merkezi",
+            "lat": 41.11054943969298,
+            "lng": 28.805850489741832,
+            "mah": "Sular Vadisi"
+      },
+      {
+            "name": "Bahçeşehir BAKMER",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.062386713906854,
+            "lng": 28.683997112554277,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Hacı Bektaş Veli Kütüphanesi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.074058246172314,
+            "lng": 28.66604395599376,
+            "mah": "Bahçeşehir . Kısım"
+      },
+      {
+            "name": "Bahçeşehir Kültür Sanat Merkezi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.06710626851833,
+            "lng": 28.691390508814543,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.07464817148011,
+            "lng": 28.693006790229646,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Muhsin Ertuğrul Sanat Merkezi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.062618212694716,
+            "lng": 28.684523262985266,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir Emin Saraç Kültür Sanat Merkezi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.09960385249046,
+            "lng": 28.787107137047197,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Cemil Meriç KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.11431374317418,
+            "lng": 28.81117317370066,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Cevdet Kılıçlar KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.10174146314901,
+            "lng": 28.79093768156155,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Fenertepe KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.1330577695328,
+            "lng": 28.788751087124282,
+            "mah": "Fenertepe"
+      },
+      {
+            "name": "Güvercintepe KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.08232452181818,
+            "lng": 28.750944154615595,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Necdet Yıldırım KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.105870789113084,
+            "lng": 28.76136796712412,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Necip Fazıl Kısakürek KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.12065664456776,
+            "lng": 28.80631567941918,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Özdemir Bayraktar KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.07970916812955,
+            "lng": 28.663173487071198,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Sezai Karakoç Gençlik Merkezi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.08569198002833,
+            "lng": 28.75335720629151,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Şahintepe KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.067182206483565,
+            "lng": 28.729316850335465,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Şehir Sanat Merkezi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.12090989731854,
+            "lng": 28.771038644663353,
+            "mah": "Kayabaşı / Belediye Binası"
+      },
+      {
+            "name": "Şehit Savcı M. Selim Kiraz KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.09920832975679,
+            "lng": 28.806707908944613,
+            "mah": "Başakşehir 2. Etap"
+      },
+      {
+            "name": "Teoman Duralı Bahçekent KYM",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.09616763911511,
+            "lng": 28.647024202961887,
+            "mah": "Bahçekent"
+      },
+      {
+            "name": "Yunus Emre Kütüphanesi",
+            "cat": "Kültür ve Yaşam Merkezleri",
+            "lat": 41.074477821065926,
+            "lng": 28.692164700592237,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Abdi İbrahim Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.07293273532292,
+            "lng": 28.68367744088237,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Abdülhamit Han Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08750522175791,
+            "lng": 28.655093502259845,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Ahmet Kabaklı İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10903837891681,
+            "lng": 28.8075762712939,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Akif İnan Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11431903344062,
+            "lng": 28.791766369719987,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Akşemsettin Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.1192240719127,
+            "lng": 28.8056103736495,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Alev Alatlı Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11672941656469,
+            "lng": 28.76771228135936,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Bahçeşehir Atatürk Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.074166644230154,
+            "lng": 28.684144100406904,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Süleyman Demirel İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.06337250578261,
+            "lng": 28.68494766786548,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Başakşehir Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09418971182031,
+            "lng": 28.81049174881752,
+            "mah": "Başak Mahallesi 2. Etap"
+      },
+      {
+            "name": "Başakşehir Ayazma İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.069488455165924,
+            "lng": 28.779276335324834,
+            "mah": "Ziya Gökalp / Ayazma"
+      },
+      {
+            "name": "Başakşehir Aziz Sancar Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09450101464801,
+            "lng": 28.77104386274192,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Başakşehir Cumhuriyet İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10456683004368,
+            "lng": 28.67003430834262,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir Çok Programlı Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.07379805221997,
+            "lng": 28.74996171019374,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Başakşehir Halk Eğitimi Merkezi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10796081971167,
+            "lng": 28.78314928135908,
+            "mah": "Başak Mahallesi 1. Etap"
+      },
+      {
+            "name": "Başakşehir İTÜ İsmail Dede Efendi Güzel Sanatlar Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11721555053325,
+            "lng": 28.767776150146222,
+            "mah": "Kayabaşı / Kayaşehir 7. Bölge"
+      },
+      {
+            "name": "Başakşehir Ömer Döngeloğlu Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11349681939688,
+            "lng": 28.79219581390006,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Başakşehir Rasim Özdenören Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.125663715208546,
+            "lng": 28.778898071572677,
+            "mah": "Kayabaşı / Kayaşehir 10. Bölge"
+      },
+      {
+            "name": "Başakşehir Şehit Orhun Göytan İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.0940935408296,
+            "lng": 28.771934437178366,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "Baykar Milli Teknoloji Mesleki ve Teknik Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09752286638324,
+            "lng": 28.64454124446361,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Boğazköy Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08100499833567,
+            "lng": 28.66238064511218,
+            "mah": "Boğazköy"
+      },
+      {
+            "name": "Borsa İstanbul Alparslan Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.074206267848254,
+            "lng": 28.780004899651857,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Borsa İstanbul Başakşehir Mesleki ve Teknik Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.086905189724206,
+            "lng": 28.80567520664321,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Cahit Zarifoğlu İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10032595888897,
+            "lng": 28.792384542735757,
+            "mah": "Başak Mahallesi 4. Etap"
+      },
+      {
+            "name": "Emlak Konut Bahçekent Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09580545206851,
+            "lng": 28.649120586915885,
+            "mah": "Bahçekent"
+      },
+      {
+            "name": "Emlak Konut Fuat Sezgin İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11729159513207,
+            "lng": 28.767624013900335,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Fatih Sultan Mehmet İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10281819178125,
+            "lng": 28.80876336171485,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Fenertepe İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.14079779063786,
+            "lng": 28.79049171143745,
+            "mah": "Fenertepe"
+      },
+      {
+            "name": "Güvercintepe İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.081010884706814,
+            "lng": 28.756711999602263,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Güvercintepe Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08150420174893,
+            "lng": 28.75560156506977,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Hacı Ali Osman Gül İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.07745228697635,
+            "lng": 28.72799742783914,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Hacı Fatma Gül Çok Programlı Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08079014150449,
+            "lng": 28.72182364088264,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Hacı Şöhret Demiröz Fen Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.099913624449314,
+            "lng": 28.67242259021534,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Hikmet Uluğbay Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.086250442841525,
+            "lng": 28.745064012046736,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "İBB Kanuni Sultan Süleyman Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.0753051498569,
+            "lng": 28.693112918354878,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "İBB Mehmet Akif Ersoy İlkokul ve Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.092533758109106,
+            "lng": 28.73881583903056,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "İBB Şehit Savcı Selim Kiraz İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08158543974293,
+            "lng": 28.691812694849798,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "İBB Yavuz Sultan Selim Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08241910271068,
+            "lng": 28.693641679505653,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "İbrahim Koçaslan Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.089427484192214,
+            "lng": 28.719345923686312,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "İsmail Kemal Demiröz İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10017441561585,
+            "lng": 28.670221005213534,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "İsmail Kemal Demiröz Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10059412802641,
+            "lng": 28.671669354375236,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "İTO Başakşehir Kız Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.1026407339865,
+            "lng": 28.798775285431812,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "İTO Hüma Hatun İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10237115014872,
+            "lng": 28.799263779427974,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Kayabaşı İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.11111676669914,
+            "lng": 28.739528605630273,
+            "mah": "Kayabaşı Köy İçi"
+      },
+      {
+            "name": "Kayaşehir Şeyh Şamil İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10677639988856,
+            "lng": 28.758758740883575,
+            "mah": "Kayabaşı / Kayaşehir 3. Bölge"
+      },
+      {
+            "name": "Mahmut Şevket Zırh İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08502135400245,
+            "lng": 28.748831469002013,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Mehmet Emin Saraç Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.0998901572359,
+            "lng": 28.78584558009628,
+            "mah": "Başakşehir 1. Etap"
+      },
+      {
+            "name": "Miktat Ağaoğlu Çok Programlı Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.06880359062396,
+            "lng": 28.783368365210315,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Necip Fazıl Kısakürek Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.133463663262205,
+            "lng": 28.780608406491105,
+            "mah": "Kayabaşı / Kayaşehir 24. Bölge"
+      },
+      {
+            "name": "Nurettin Topçu İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.108254929078555,
+            "lng": 28.785955490343007,
+            "mah": "Kayabaşı / Kayaşehir 7. Bölge"
+      },
+      {
+            "name": "Oyakkent İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12396728197768,
+            "lng": 28.804668146441408,
+            "mah": "Başak Mahallesi / Oyakkent"
+      },
+      {
+            "name": "Oyakkent Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12424610717203,
+            "lng": 28.80417805799978,
+            "mah": "Başak Mahallesi / Oyakkent"
+      },
+      {
+            "name": "Öğrenciden Armağan Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.123254465022086,
+            "lng": 28.8049896609711,
+            "mah": "Başak Mahallesi / Oyakkent"
+      },
+      {
+            "name": "Prof. Dr. Ahat Andican Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.102327259242415,
+            "lng": 28.79777647873485,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Prof. Dr. Necmettin Erbakan Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.124071113270524,
+            "lng": 28.805647427240824,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Selahaddin Eyyubi İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.084961618083,
+            "lng": 28.748684906295704,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Şahintepe İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08242017564824,
+            "lng": 28.721311828103854,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Şair Erdem Bayazıt Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10671594987451,
+            "lng": 28.79008485753742,
+            "mah": "Başak Mahallesi 4. Etap"
+      },
+      {
+            "name": "Şamlar İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12405903640059,
+            "lng": 28.752033722656993,
+            "mah": "Şamlar Köyü"
+      },
+      {
+            "name": "Şehit Haki Aras Kız Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09071842927954,
+            "lng": 28.803833056504676,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Şehit Muhammed Eymen Demirci İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09028407434503,
+            "lng": 28.803726774012894,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Şehit Serdar Gökbayrak İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12462132687966,
+            "lng": 28.778752302778415,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Şehit Vedat Barceğci İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.08497672116199,
+            "lng": 28.654959834469125,
+            "mah": "Bahçeşehir 2. Kısım / Bahçekent"
+      },
+      {
+            "name": "Tepe İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.07276591029809,
+            "lng": 28.75299985564838,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "TOKİ Aliya İzzetbegoviç Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12636660617558,
+            "lng": 28.784967486572025,
+            "mah": "Kayabaşı / Kayaşehir 24. Bölge"
+      },
+      {
+            "name": "TOKİ Celalettin Ökten Kız Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12498877127881,
+            "lng": 28.764956537081183,
+            "mah": "Kayabaşı / Kayaşehir 9. Bölge"
+      },
+      {
+            "name": "TOKİ Ertuğrulgazi İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.13284566713238,
+            "lng": 28.78662695888743,
+            "mah": "Kayabaşı / Kayaşehir 18. Bölge"
+      },
+      {
+            "name": "TOKİ Ertuğrulgazi Anadolu İmam Hatip Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.13304364676163,
+            "lng": 28.786773984549324,
+            "mah": "Kayabaşı / Kayaşehir 18. Bölge"
+      },
+      {
+            "name": "TOKİ Fenertepe Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.140547966722764,
+            "lng": 28.78964903286457,
+            "mah": "Kayabaşı / Fenertepe"
+      },
+      {
+            "name": "TOKİ Hayme Ana Mesleki ve Teknik Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12470952498055,
+            "lng": 28.76710639697805,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "TOKİ Kayaşehir Anadolu Lisesi",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10078369882649,
+            "lng": 28.76384509180371,
+            "mah": "Kayaşehir 6. Bölge"
+      },
+      {
+            "name": "TOKİ Kayaşehir Mevlana İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10746800276011,
+            "lng": 28.759960283792875,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "TOKİ Kayaşehir Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.09885908614805,
+            "lng": 28.763470382162275,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "TOKİ Mustafa Kutlu İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.079394742228224,
+            "lng": 28.78377895834604,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "TOKİ Osmangazi İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.133689333658594,
+            "lng": 28.788775984184216,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "TOKİ Şehit Abdülselam Özatak İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.10840212315745,
+            "lng": 28.770256710229837,
+            "mah": "Kayabaşı / Kayaşehir 11. Bölge"
+      },
+      {
+            "name": "TOKİ Turgut Özal İmam Hatip Ortaokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12935024988767,
+            "lng": 28.773123873320024,
+            "mah": "Kayabaşı / Kayaşehir 3. Bölge"
+      },
+      {
+            "name": "TOKİ Yunus Emre İlkokulu",
+            "cat": "Eğitim Noktaları",
+            "lat": 41.12853602022107,
+            "lng": 28.773344676930158,
+            "mah": "Kayabaşı / Kayaşehir 1. Bölge"
+      },
+      {
+            "name": "Ayazma Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.06771732812494,
+            "lng": 28.773868551957012,
+            "mah": "Ziya Gökalp / Ayazma"
+      },
+      {
+            "name": "Bahçekent Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.08546567465758,
+            "lng": 28.65436933267281,
+            "mah": "Bahçekent"
+      },
+      {
+            "name": "Bahçeşehir Spor Merkezi",
+            "cat": "Spor Merkezleri",
+            "lat": 41.06831024666039,
+            "lng": 28.677510206767625,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.06800844756412,
+            "lng": 28.697917000404203,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Tenis Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.06869966220625,
+            "lng": 28.681018412257266,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir Millet Bahçesi Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.121602064132205,
+            "lng": 28.7791970086787,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Başakşehir Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.106768604580274,
+            "lng": 28.780319663094104,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Fenertepe Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.13974871173902,
+            "lng": 28.787997155099,
+            "mah": "Fenertepe"
+      },
+      {
+            "name": "Güvercintepe Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.08856740314136,
+            "lng": 28.744421282654063,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Kayaşehir Kültür Yaşam ve Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.10698143923382,
+            "lng": 28.762067004296856,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Korupark Spor Tesisleri",
+            "cat": "Spor Merkezleri",
+            "lat": 41.105570274021204,
+            "lng": 28.78608409137038,
+            "mah": "Başak Mahallesi"
+      },
+      {
+            "name": "Necip Fazıl Kısakürek Kültür Yaşam ve Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.12053428341631,
+            "lng": 28.805941263059882,
+            "mah": "Başak"
+      },
+      {
+            "name": "Özdemir Bayraktar Bilim Kültür ve Yaşam Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.080031211061495,
+            "lng": 28.66284613006579,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Şahintepe Spor Parkı",
+            "cat": "Spor Merkezleri",
+            "lat": 41.0525,
+            "lng": 28.7255,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Başakpazar Fuar ve Sergi Alanı",
+            "cat": "Alışveriş Alanları",
+            "lat": 41.11117689399067,
+            "lng": 28.80960035781435,
+            "mah": "Başak"
+      },
+      {
+            "name": "Fenertepe Kapalı Pazar Alanı",
+            "cat": "Alışveriş Alanları",
+            "lat": 41.13286206470307,
+            "lng": 28.78103772249862,
+            "mah": "Fenertepe"
+      },
+      {
+            "name": "İGTOT-İstanbul Gıda Toptancılar Çarşısı",
+            "cat": "Alışveriş Alanları",
+            "lat": 41.08640835066914,
+            "lng": 28.723092689210258,
+            "mah": "Şahintepe / İGTOT"
+      },
+      {
+            "name": "Kayaşehir Fuar ve Sergi Alanı",
+            "cat": "Alışveriş Alanları",
+            "lat": 41.10521059729311,
+            "lng": 28.759426084129213,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Pazartürk Fuar ve Sergi Alanı",
+            "cat": "Alışveriş Alanları",
+            "lat": 41.079973310900115,
+            "lng": 28.678669608134364,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Millet Kütüphanesi",
+            "cat": "Millet Kütüphaneleri",
+            "lat": 41.0625086128302,
+            "lng": 28.684211982519283,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Başakşehir Millet Kıraathanesi",
+            "cat": "Millet Kütüphaneleri",
+            "lat": 41.12042179136111,
+            "lng": 28.770268308195536,
+            "mah": "Başakşehir Belediyesi Binası"
+      },
+      {
+            "name": "Bahçekent Teoman Duralı Millet Kıraathanesi",
+            "cat": "Millet Kütüphaneleri",
+            "lat": 41.09618661634364,
+            "lng": 28.64705262120797,
+            "mah": "Bahçekent Hayat Park"
+      },
+      {
+            "name": "Bahçeşehir Oto Yıkama Alanı",
+            "cat": "Hızlı Oto Yıkama Alanı",
+            "lat": 41.08374187498497,
+            "lng": 28.678748299596435,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Başakşehir Millet Bahçesi Oto Yıkama Alanı",
+            "cat": "Hızlı Oto Yıkama Alanı",
+            "lat": 41.11652068034621,
+            "lng": 28.775847342706466,
+            "mah": "Millet Bahçesi"
+      },
+      {
+            "name": "Ağu İçen Cemevi",
+            "cat": "Cemevleri",
+            "lat": 41.095261273073476,
+            "lng": 28.71652227211593,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Bahçeşehir Canlar Cemevi",
+            "cat": "Cemevleri",
+            "lat": 41.07596600074523,
+            "lng": 28.658093049085267,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Hacı Bektaş-ı Veli Cemevi",
+            "cat": "Cemevleri",
+            "lat": 41.091010425151474,
+            "lng": 28.756988543463994,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Abdülhamid Han Camii",
+            "cat": "Camiler",
+            "lat": 41.12907780742963,
+            "lng": 28.78023100262567,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Akif İnan Camii",
+            "cat": "Camiler",
+            "lat": 41.11437377286893,
+            "lng": 28.7905860150406,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Akşemsettin Camii",
+            "cat": "Camiler",
+            "lat": 41.092269024020545,
+            "lng": 28.812310050444257,
+            "mah": "Başak"
+      },
+      {
+            "name": "Alemdar Camii",
+            "cat": "Camiler",
+            "lat": 41.07986263988099,
+            "lng": 28.748940030859682,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Aydınlar Camii",
+            "cat": "Camiler",
+            "lat": 41.07965009151902,
+            "lng": 28.718507181085037,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Aymakoop Camii",
+            "cat": "Camiler",
+            "lat": 41.07952457389841,
+            "lng": 28.790337636690015,
+            "mah": "Ziya Gökalp / Sanayi"
+      },
+      {
+            "name": "Bahçeşehir Ebussuud Efendi Camii",
+            "cat": "Camiler",
+            "lat": 41.074610705915646,
+            "lng": 28.692187603759873,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Bahçeşehir Hacı Eyüp Saadet Çarmıklı Camii",
+            "cat": "Camiler",
+            "lat": 41.07008561943528,
+            "lng": 28.6844023436453,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Başakşehir Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.12045692880317,
+            "lng": 28.772929416426766,
+            "mah": "Kayaşehir"
+      },
+      {
+            "name": "Bilal-i Habeşi Camii",
+            "cat": "Camiler",
+            "lat": 41.12054530610384,
+            "lng": 28.806510472396102,
+            "mah": "Başak"
+      },
+      {
+            "name": "Boğazköy Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.078328912313836,
+            "lng": 28.66615926672921,
+            "mah": "Boğazköy"
+      },
+      {
+            "name": "Demirciler Kooperatif Camii",
+            "cat": "Camiler",
+            "lat": 41.06936289618292,
+            "lng": 28.805618783719737,
+            "mah": "İkitelli Sanayi"
+      },
+      {
+            "name": "Dolapdere Sanayi Sitesi Camii",
+            "cat": "Camiler",
+            "lat": 41.074466375768814,
+            "lng": 28.807166975744597,
+            "mah": "İkitelli Sanayi"
+      },
+      {
+            "name": "Elmalılı Hamdi Yazır Camii",
+            "cat": "Camiler",
+            "lat": 41.093916381635594,
+            "lng": 28.739391360950716,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Emlak Konut Başakşehir Evleri Camii",
+            "cat": "Camiler",
+            "lat": 41.11444434924659,
+            "lng": 28.767230148851613,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "Bahçekent Emlak Konut Camii",
+            "cat": "Camiler",
+            "lat": 41.09186903294469,
+            "lng": 28.65039454631295,
+            "mah": "Bahçekent"
+      },
+      {
+            "name": "Ensar Camii",
+            "cat": "Camiler",
+            "lat": 41.096197255492065,
+            "lng": 28.80485660746357,
+            "mah": "Başak"
+      },
+      {
+            "name": "Ertuğrul Gazi Camii",
+            "cat": "Camiler",
+            "lat": 41.13607420295938,
+            "lng": 28.77124519779062,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Eski Şamlar Köyü Camii",
+            "cat": "Camiler",
+            "lat": 41.12397706687739,
+            "lng": 28.735960318291003,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Estonşehir Aksa Camii",
+            "cat": "Camiler",
+            "lat": 41.09288576261307,
+            "lng": 28.68130583360933,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Fetih Camii",
+            "cat": "Camiler",
+            "lat": 41.074000016594866,
+            "lng": 28.733954526411594,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Gazi Süleyman Paşa Camii",
+            "cat": "Camiler",
+            "lat": 41.13259088218488,
+            "lng": 28.788001562007462,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Giyim Sanatkarları Camii",
+            "cat": "Camiler",
+            "lat": 41.07125491382179,
+            "lng": 28.80684507134561,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Göçmen Konutları Camii",
+            "cat": "Camiler",
+            "lat": 41.10458641159877,
+            "lng": 28.796420631256996,
+            "mah": "Başak"
+      },
+      {
+            "name": "Gülendam Hatun Camii",
+            "cat": "Camiler",
+            "lat": 41.096245413328,
+            "lng": 28.760706262578914,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Güler Kadıoğlu Camii",
+            "cat": "Camiler",
+            "lat": 41.08927103069709,
+            "lng": 28.806203543681256,
+            "mah": "Başak"
+      },
+      {
+            "name": "Altınşehir Tepe Mh. Eski Merkez Camii",
+            "cat": "Camiler",
+            "lat": 41.06269578761568,
+            "lng": 28.753674925429305,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Güvercintepe Sultan Beyazıt Camii",
+            "cat": "Camiler",
+            "lat": 41.08027710224854,
+            "lng": 28.7477716292826,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Hacı Ahmet Camii",
+            "cat": "Camiler",
+            "lat": 41.10424754623514,
+            "lng": 28.790302680770335,
+            "mah": "Başakşehir 1.Etap"
+      },
+      {
+            "name": "Hacı Kamil Demiröz Camii",
+            "cat": "Camiler",
+            "lat": 41.102391087646396,
+            "lng": 28.666913552966136,
+            "mah": "Bahçeşehir 2. Kısım"
+      },
+      {
+            "name": "Hacı Kasım Camii",
+            "cat": "Camiler",
+            "lat": 41.10504906873871,
+            "lng": 28.74894194942583,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Hacı Osman Işıklı Camii",
+            "cat": "Camiler",
+            "lat": 41.06752954996408,
+            "lng": 28.672422328362074,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Halilurrahman Camii",
+            "cat": "Camiler",
+            "lat": 41.07071467525254,
+            "lng": 28.748939268106678,
+            "mah": "Altınşehir"
+      },
+      {
+            "name": "Haseyad Camii",
+            "cat": "Camiler",
+            "lat": 41.07806715916349,
+            "lng": 28.80921109654515,
+            "mah": "İkitelli Sanayi"
+      },
+      {
+            "name": "Hatice Binti Ali Camii",
+            "cat": "Camiler",
+            "lat": 41.07684982271164,
+            "lng": 28.78367043318028,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Hayır Ortakları Camii",
+            "cat": "Camiler",
+            "lat": 41.128810713625576,
+            "lng": 28.774655720604912,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Hayrettin Atmaca Camii",
+            "cat": "Camiler",
+            "lat": 41.09497441207713,
+            "lng": 28.78819914772508,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Hazreti Ali Camii",
+            "cat": "Camiler",
+            "lat": 41.08529770865104,
+            "lng": 28.75334514732504,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Hazreti Ebubekir Camii",
+            "cat": "Camiler",
+            "lat": 41.07853968788046,
+            "lng": 28.75459455306287,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Hoca Ahmet Yesevi Camii",
+            "cat": "Camiler",
+            "lat": 41.10473882087416,
+            "lng": 28.786611318182448,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Hoşdere Camii",
+            "cat": "Camiler",
+            "lat": 41.082052211685316,
+            "lng": 28.658930190588567,
+            "mah": "Bahçekent / Hoşdere"
+      },
+      {
+            "name": "Huzur Camii",
+            "cat": "Camiler",
+            "lat": 41.07439533059144,
+            "lng": 28.754301755498624,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Hz. Hamza Camii",
+            "cat": "Camiler",
+            "lat": 41.06415111309153,
+            "lng": 28.775708308878027,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Hz. Hüseyin Camii",
+            "cat": "Camiler",
+            "lat": 41.108186508232826,
+            "lng": 28.759644914437587,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Hz. Osman Camii",
+            "cat": "Camiler",
+            "lat": 41.13243949950514,
+            "lng": 28.77766665954051,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Hz. Ömer Camii",
+            "cat": "Camiler",
+            "lat": 41.07289387113172,
+            "lng": 28.7877068240407,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "İGTOT Camii",
+            "cat": "Camiler",
+            "lat": 41.086875910741426,
+            "lng": 28.723359172215876,
+            "mah": "Şahintepe / İGTOT"
+      },
+      {
+            "name": "İmam-ı Azam Camii",
+            "cat": "Camiler",
+            "lat": 41.109265080534094,
+            "lng": 28.803801149237415,
+            "mah": "Başak"
+      },
+      {
+            "name": "İPKAS Camii",
+            "cat": "Camiler",
+            "lat": 41.07958119933056,
+            "lng": 28.795085130986916,
+            "mah": "İkitelli Sanayi"
+      },
+      {
+            "name": "İskender Esma Camii",
+            "cat": "Camiler",
+            "lat": 41.08090211750332,
+            "lng": 28.7267611157218,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "İskilipli Atıf Hoca Camii",
+            "cat": "Camiler",
+            "lat": 41.07657101200033,
+            "lng": 28.69514973882934,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Kayabaşı Bilal-i Habeşi Camii",
+            "cat": "Camiler",
+            "lat": 41.12423708600405,
+            "lng": 28.766334496969847,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "Kayabaşı Camii",
+            "cat": "Camiler",
+            "lat": 41.11143755874366,
+            "lng": 28.740303951105563,
+            "mah": "Kayabaşı"
+      },
+      {
+            "name": "Kut-ül Ammare Camii",
+            "cat": "Camiler",
+            "lat": 41.082398055041516,
+            "lng": 28.692390497402975,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Küba Camii",
+            "cat": "Camiler",
+            "lat": 41.07962084382008,
+            "lng": 28.751276090377452,
+            "mah": "Güvercintepe"
+      },
+      {
+            "name": "Medine Müdafii Fahrettin Paşa Camii",
+            "cat": "Camiler",
+            "lat": 41.10363213581174,
+            "lng": 28.8046049737773,
+            "mah": "Başak"
+      },
+      {
+            "name": "Mehmet Akif Ersoy Camii",
+            "cat": "Camiler",
+            "lat": 41.10163510152811,
+            "lng": 28.760191862058413,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Mehmet Dinçel Camii",
+            "cat": "Camiler",
+            "lat": 41.08398274984875,
+            "lng": 28.770383092146414,
+            "mah": "Ziya Gökalp"
+      },
+      {
+            "name": "Mehmet Şükrü Paşa Camii",
+            "cat": "Camiler",
+            "lat": 41.142100115834296,
+            "lng": 28.79238253193192,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Mehmet Zahid Kotku Camii",
+            "cat": "Camiler",
+            "lat": 41.10014959752136,
+            "lng": 28.790545945474467,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Mevlana Camii",
+            "cat": "Camiler",
+            "lat": 41.10116717703957,
+            "lng": 28.810733074834125,
+            "mah": "Başak"
+      },
+      {
+            "name": "Müderris Halil Hilmi Camii",
+            "cat": "Camiler",
+            "lat": 41.10721801326862,
+            "lng": 28.78446110444767,
+            "mah": "Başak"
+      },
+      {
+            "name": "Ömer Nasuhi Bilmen Camii",
+            "cat": "Camiler",
+            "lat": 41.113352006655745,
+            "lng": 28.806313649255507,
+            "mah": "Başak"
+      },
+      {
+            "name": "Prof. Dr. M. Esad Coşan Camii",
+            "cat": "Camiler",
+            "lat": 41.11046138151739,
+            "lng": 28.78607187888392,
+            "mah": "Başak"
+      },
+      {
+            "name": "Ramazan ve Özkan Demirel Camii",
+            "cat": "Camiler",
+            "lat": 41.09458503110778,
+            "lng": 28.78353491509889,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Saraçlar Camii",
+            "cat": "Camiler",
+            "lat": 41.08396286708649,
+            "lng": 28.785544521364123,
+            "mah": "İkitelli Sanayi"
+      },
+      {
+            "name": "Sarı Saltuk Camii",
+            "cat": "Camiler",
+            "lat": 41.09524590815865,
+            "lng": 28.810533726142367,
+            "mah": "Başak"
+      },
+      {
+            "name": "Selman-ı Farisi Camii",
+            "cat": "Camiler",
+            "lat": 41.08597798256408,
+            "lng": 28.809905110067987,
+            "mah": "Başak"
+      },
+      {
+            "name": "Süleyman Çelebi Camii",
+            "cat": "Camiler",
+            "lat": 41.105306300740324,
+            "lng": 28.800230169938402,
+            "mah": "Başak"
+      },
+      {
+            "name": "Süleyman Şah Camii",
+            "cat": "Camiler",
+            "lat": 41.13648877680732,
+            "lng": 28.775942911368936,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Şehit Ömer Halisdemir Camii",
+            "cat": "Camiler",
+            "lat": 41.0946252949501,
+            "lng": 28.772606969913326,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Şeyh Şamil Camii",
+            "cat": "Camiler",
+            "lat": 41.10102023800971,
+            "lng": 28.8048852406498,
+            "mah": "Başak"
+      },
+      {
+            "name": "Şinasi Ünsal Camii",
+            "cat": "Camiler",
+            "lat": 41.10955142643039,
+            "lng": 28.795486919982768,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "Şüheda Camii",
+            "cat": "Camiler",
+            "lat": 41.123468240467226,
+            "lng": 28.802984339873376,
+            "mah": "Başakşehir"
+      },
+      {
+            "name": "TOKİ Ayazma Camii",
+            "cat": "Camiler",
+            "lat": 41.07879971731207,
+            "lng": 28.779868365248777,
+            "mah": "Ziya Gökalp / Ayazma"
+      },
+      {
+            "name": "Tunahan Camii",
+            "cat": "Camiler",
+            "lat": 41.10904101823296,
+            "lng": 28.809545200751398,
+            "mah": "Başak"
+      },
+      {
+            "name": "Uhud Camii",
+            "cat": "Camiler",
+            "lat": 41.105202255361334,
+            "lng": 28.770492773105754,
+            "mah": "Kayabaşı / Kayaşehir"
+      },
+      {
+            "name": "Veysel Karani Camii",
+            "cat": "Camiler",
+            "lat": 41.07459921222338,
+            "lng": 28.72321327572494,
+            "mah": "Şahintepe"
+      },
+      {
+            "name": "Yavuz Sultan Selim Camii",
+            "cat": "Camiler",
+            "lat": 41.086027224674794,
+            "lng": 28.65451561414899,
+            "mah": "Bahçeşehir 1. Kısım"
+      },
+      {
+            "name": "Yeni Şamlar Camii",
+            "cat": "Camiler",
+            "lat": 41.125904534351655,
+            "lng": 28.75517993055102,
+            "mah": "Şamlar"
+      },
+      {
+            "name": "Yunus Emre Camii",
+            "cat": "Camiler",
+            "lat": 41.11905296744009,
+            "lng": 28.810283231316433,
+            "mah": "Başak"
+      },
+      {
+            "name": "Zekiye Hatun Camii",
+            "cat": "Camiler",
+            "lat": 41.06736288645625,
+            "lng": 28.73308434307373,
+            "mah": "Şahintepe"
+      }
+    ];
 
-  LOCATIONS.forEach(loc => {
-    const onMap = map.hasLayer(loc.marker);
-    if (visibleIds.has(loc.id) && !onMap) loc.marker.addTo(map);
-    if (!visibleIds.has(loc.id) && onMap) map.removeLayer(loc.marker);
-  });
+    let map = null;
+    let markerInstances = [];
+    let currentActivePopup = null;
+    let disabledCategories = new Set();
+    let isRotating = false;
+    let rotationReq = null;
+    let activeEditingIdx = null;
+    let isCrosshairPicking = false;
 
-  renderCategoryFilters();
-  renderLocationList(visible);
-  listMetaEl.textContent = `${visible.length} / ${LOCATIONS.length} nokta gösteriliyor`;
-  statVisibleEl.textContent = visible.length;
-  document.getElementById("statTotal").textContent = LOCATIONS.length;
-}
+    // SOL MENÜYÜ HARİTADAN BAĞIMSIZ HEMEN BAŞLAT
+    buildCategories();
+    buildPlacesList();
 
-/* ======================= SIDEBAR TOGGLE (Sunum Modu) ======================= */
-const sidebar = document.getElementById("sidebar");
-const toggleBtn = document.getElementById("toggleSidebar");
-toggleBtn.addEventListener("click", () => {
-  sidebar.classList.toggle("collapsed");
-  toggleBtn.textContent = sidebar.classList.contains("collapsed") ? "Listeyi Göster" : "Sunum Modu";
-  setTimeout(() => map.invalidateSize(), 260);
-});
+    // Mobil Bottom Sheet Kontrolleri
+    function toggleMobileSidebar() {
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.toggle('expanded');
+      }
+    }
 
-</script></body></html>
+    document.getElementById('search-input').addEventListener('focus', () => {
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.add('expanded');
+      }
+    });
+
+    if (!userToken) {
+      document.getElementById('token-modal').classList.add('show');
+    } else {
+      initMapbox(userToken);
+    }
+
+    function saveToken() {
+      const val = document.getElementById('token-input').value.trim();
+      if (!val.startsWith('pk.')) {
+        alert("Lütfen geçerli bir Mapbox Public Token (pk.eyJ...) girin.");
+        return;
+      }
+      localStorage.setItem('mapbox_token', val);
+      document.getElementById('token-modal').classList.remove('show');
+      initMapbox(val);
+    }
+
+    function initMapbox(token) {
+      mapboxgl.accessToken = token;
+
+      map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/standard',
+        center: [28.775, 41.105],
+        zoom: 13.2,
+        pitch: 62,
+        bearing: -18,
+        maxPitch: 85
+      });
+
+      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+      map.on('load', () => {
+        try {
+          map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+        } catch(e) {
+          console.warn(e);
+        }
+        renderMarkers();
+      });
+
+      // Haritada tıklandığında koordinat seçme modu devredeyse
+      map.on('click', (e) => {
+        if (!isCrosshairPicking || activeEditingIdx === null) return;
+        const lat = parseFloat(e.lngLat.lat.toFixed(6));
+        const lng = parseFloat(e.lngLat.lng.toFixed(6));
+        document.getElementById('edit-lat-val').value = lat;
+        document.getElementById('edit-lng-val').value = lng;
+        toggleCrosshairPick();
+      });
+    }
+
+    function setLighting(preset) {
+      if (!map) return;
+      try {
+        map.setConfigProperty('basemap', 'lightPreset', preset);
+      } catch(e) {
+        console.warn(e);
+      }
+      document.querySelectorAll('.btn-light').forEach(b => b.classList.remove('active'));
+      if (window.event && window.event.target) {
+        window.event.target.closest('.btn-light').classList.add('active');
+      }
+    }
+
+    // POPUP HTML OLUŞTURUCU
+    function generatePopupContent(p, idx) {
+      const color = categoryColors[p.cat] || "#38bdf8";
+      return `
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;">
+          <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:${color}; letter-spacing:0.05em; margin-bottom:4px;">
+            ${p.cat}
+          </div>
+          <h3 style="font-size:0.95rem; font-weight:800; color:#fff; line-height:1.25; margin-bottom:5px;">
+            ${p.name}
+          </h3>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:4px;">
+            <i class="fa-solid fa-location-dot" style="color:#64748b; margin-right:4px;"></i>${p.mah}
+          </div>
+          <div style="font-size:0.68rem; color:#64748b; font-family:monospace; margin-bottom:10px;">
+            ${p.lat}, ${p.lng}
+          </div>
+          <div style="display:flex; gap:6px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" 
+               style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:0.72rem; font-weight:700; color:#38bdf8; text-decoration:none; padding:6px 8px; border-radius:6px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25);">
+              <i class="fa-solid fa-diamond-turn-right"></i> Yol Tarifi
+            </a>
+            <button onclick="openEditPanel(${idx})" 
+               style="display:inline-flex; align-items:center; justify-content:center; gap:4px; font-size:0.72rem; font-weight:700; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:6px 12px; border-radius:6px; cursor:pointer;">
+              <i class="fa-solid fa-pen-to-square"></i> Düzenle
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // POPUP'I TEK VE KESİN BİR ŞEKİLDE AÇAN FONKSİYON (Çakışma Önleyici)
+    function openPopupForIndex(idx) {
+      if (!map) return;
+      if (currentActivePopup) {
+        currentActivePopup.remove();
+        currentActivePopup = null;
+      }
+      const p = allPoints[idx];
+      currentActivePopup = new mapboxgl.Popup({ offset: 16, closeButton: true, closeOnClick: false })
+        .setLngLat([p.lng, p.lat])
+        .setHTML(generatePopupContent(p, idx))
+        .addTo(map);
+    }
+
+    // PINLERİ ÇİZME (Çift tetikleme olmadan doğrudan tıklandığında açılır)
+    function renderMarkers() {
+      if (!map) return;
+      markerInstances.forEach(m => m.remove());
+      markerInstances = [];
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+      allPoints.forEach((p, idx) => {
+        if (disabledCategories.has(p.cat)) return;
+        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
+
+        const color = categoryColors[p.cat] || "#38bdf8";
+
+        const el = document.createElement('div');
+        el.className = 'marker-pin-3d';
+        el.style.backgroundColor = color;
+        el.style.color = color;
+
+        // Tıklama Dinleyicisi (Doğrudan popup'ı açar ve kamerayı odaklar)
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          flyTo3D(p.lng, p.lat, 16.8, 65);
+          openPopupForIndex(idx);
+        });
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([p.lng, p.lat])
+          .addTo(map);
+
+        markerInstances.push(marker);
+      });
+    }
+
+    // DÜZENLEME PANELİNİ AÇMA
+    function openEditPanel(idx) {
+      activeEditingIdx = idx;
+      const p = allPoints[idx];
+      document.getElementById('edit-name-display').textContent = p.name;
+      document.getElementById('edit-lat-val').value = p.lat;
+      document.getElementById('edit-lng-val').value = p.lng;
+      document.getElementById('edit-drawer').classList.add('show');
+      // Mobilde düzenleme paneli açıldığında çekmeceyi yukarı aç
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.add('expanded');
+      }
+
+      flyTo3D(p.lng, p.lat, 17, 65);
+      openPopupForIndex(idx);
+    }
+
+    function closeEditPanel() {
+      activeEditingIdx = null;
+      if (isCrosshairPicking) toggleCrosshairPick();
+      document.getElementById('edit-drawer').classList.remove('show');
+    }
+
+    function toggleCrosshairPick() {
+      isCrosshairPicking = !isCrosshairPicking;
+      const btn = document.getElementById('btn-pick-cross');
+      const mapDiv = document.getElementById('map');
+      if (isCrosshairPicking) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Haritaya Tıklayın...';
+        mapDiv.classList.add('pick-crosshair');
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Haritadan Tıkla';
+        mapDiv.classList.remove('pick-crosshair');
+      }
+    }
+
+    function savePointChanges() {
+      if (activeEditingIdx === null) return;
+      const newLat = parseFloat(document.getElementById('edit-lat-val').value);
+      const newLng = parseFloat(document.getElementById('edit-lng-val').value);
+
+      if (isNaN(newLat) || isNaN(newLng)) {
+        alert("Lütfen geçerli bir sayı girin.");
+        return;
+      }
+
+      // Koordinatı güncelle
+      allPoints[activeEditingIdx].lat = newLat;
+      allPoints[activeEditingIdx].lng = newLng;
+
+      // Pin'leri ve listeyi yenile
+      renderMarkers();
+      buildPlacesList();
+
+      // Yeni konuma uç ve popup'ı göster
+      flyTo3D(newLng, newLat, 17, 65);
+      openPopupForIndex(activeEditingIdx);
+
+      closeEditPanel();
+      alert("Nokta konumu güncellendi! Kalıcı olması için 'locations.json İndir' butonuna basabilirsiniz.");
+    }
+
+    function downloadJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allPoints, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "locations.json");
+      dlAnchor.click();
+    }
+
+    function flyTo3D(lng, lat, zoom = 16.5, pitch = 65) {
+      if (!map) return;
+      // Mobilde bir noktaya odaklanıldığında haritayı görmek için paneli küçült
+      if (window.innerWidth <= 768 && activeEditingIdx === null) {
+        document.getElementById('sidebar').classList.remove('expanded');
+      }
+      map.flyTo({
+        center: [lng, lat],
+        zoom: zoom,
+        pitch: pitch,
+        bearing: Math.floor(Math.random() * 60) - 30,
+        speed: 1.2,
+        curve: 1.4,
+        essential: true
+      });
+    }
+
+    function buildCategories() {
+      const counts = {};
+      allPoints.forEach(p => counts[p.cat] = (counts[p.cat] || 0) + 1);
+      const container = document.getElementById('cat-view');
+      if (!container) return;
+      container.innerHTML = '';
+
+      Object.keys(counts).sort().forEach(cat => {
+        const col = categoryColors[cat] || "#38bdf8";
+        const div = document.createElement('div');
+        div.className = 'cat-row' + (disabledCategories.has(cat) ? ' inactive' : '');
+        div.innerHTML = `
+          <div class="cat-left">
+            <span class="cat-dot" style="background:${col}; color:${col};"></span>
+            <span>${cat}</span>
+          </div>
+          <span class="cat-badge">${counts[cat]}</span>
+        `;
+        div.onclick = () => {
+          if (disabledCategories.has(cat)) disabledCategories.delete(cat);
+          else disabledCategories.add(cat);
+          buildCategories();
+          renderMarkers();
+          buildPlacesList();
+        };
+        container.appendChild(div);
+      });
+    }
+
+    function buildPlacesList() {
+      const container = document.getElementById('place-view');
+      if (!container) return;
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      container.innerHTML = '';
+
+      let count = 0;
+      allPoints.forEach((p, idx) => {
+        if (disabledCategories.has(p.cat)) return;
+        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
+        count++;
+
+        const col = categoryColors[p.cat] || "#38bdf8";
+        const div = document.createElement('div');
+        div.className = 'place-row';
+        div.innerHTML = `
+          <div class="place-left">
+            <div class="place-name">${p.name}</div>
+            <div class="place-meta">
+              <span style="color:${col}; font-weight:700;">● ${p.cat}</span>
+              <span>📍 ${p.mah}</span>
+            </div>
+          </div>
+          <button class="btn-row-edit" onclick="event.stopPropagation(); openEditPanel(${idx});">
+            <i class="fa-solid fa-pen"></i> Düzenle
+          </button>
+        `;
+        div.onclick = () => {
+          flyTo3D(p.lng, p.lat, 16.8, 65);
+          openPopupForIndex(idx);
+        };
+        container.appendChild(div);
+      });
+
+      const badge = document.getElementById('count-badge');
+      if (badge) badge.textContent = count;
+    }
+
+    function togglePerspective() {
+      if (!map) return;
+      const pitch = map.getPitch();
+      map.easeTo({ pitch: pitch > 20 ? 0 : 65, duration: 1000 });
+    }
+
+    function resetToBasaksehir() {
+      if (!map) return;
+      stopRotation();
+      map.flyTo({ center: [28.775, 41.105], zoom: 13, pitch: 62, bearing: -18, speed: 1.2 });
+    }
+
+    function rotateCamera() {
+      if (!map) return;
+      if (isRotating) {
+        stopRotation();
+      } else {
+        isRotating = true;
+        document.getElementById('orbit-icon').classList.add('fa-spin');
+        animateOrbit();
+      }
+    }
+
+    function animateOrbit() {
+      if (!isRotating || !map) return;
+      map.setBearing(map.getBearing() + 0.2);
+      rotationReq = requestAnimationFrame(animateOrbit);
+    }
+
+    function stopRotation() {
+      isRotating = false;
+      document.getElementById('orbit-icon').classList.remove('fa-spin');
+      if (rotationReq) cancelAnimationFrame(rotationReq);
+    }
+
+    function switchTab(t) {
+      document.getElementById('tab-cat-btn').classList.toggle('active', t === 'cat');
+      document.getElementById('tab-place-btn').classList.toggle('active', t === 'place');
+      document.getElementById('cat-view').style.display = t === 'cat' ? 'block' : 'none';
+      document.getElementById('place-view').style.display = t === 'place' ? 'block' : 'none';
+    }
+
+    document.getElementById('search-input').addEventListener('input', () => {
+      renderMarkers();
+      buildPlacesList();
+      if (document.getElementById('search-input').value.trim() !== '') switchTab('place');
+    });
+  </script>
+</body>
+</html>
