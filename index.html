@@ -2668,6 +2668,15 @@
       initMapbox(val);
     }
 
+    function fitDistrictBoundary(duration = 0) {
+      if (!map) return;
+      map.fitBounds([[28.6395951, 41.0578521], [28.8506049, 41.1494396]], {
+        padding: { top: 72, bottom: 72, left: window.innerWidth > 768 ? 430 : 24, right: 84 },
+        maxZoom: 12,
+        duration
+      });
+    }
+
     function initMapbox(token) {
       mapboxgl.accessToken = token;
 
@@ -2685,6 +2694,7 @@
 
       map.on('load', () => {
         mapReady = true;
+        fitDistrictBoundary();
         try {
           map.setConfigProperty('basemap', 'lightPreset', 'dusk');
         } catch(e) {
@@ -3064,7 +3074,9 @@
     function resetToBasaksehir() {
       if (!map) return;
       stopRotation();
-      map.flyTo({ center: [28.775, 41.105], zoom: 12.8, pitch: 50, bearing: -18, duration: 850, essential: true });
+      map.setPitch(50);
+      map.setBearing(-18);
+      fitDistrictBoundary(850);
     }
 
     function rotateCamera() {
