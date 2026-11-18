@@ -2795,9 +2795,10 @@
         filter: ['has', 'point_count'],
         paint: {
           'circle-color': ['step', ['get', 'point_count'], '#00F5FF', 10, '#39FF14', 25, '#FFE600', 50, '#FF5A00'],
-          'circle-radius': ['step', ['get', 'point_count'], 34, 10, 41, 25, 51, 50, 62],
-          'circle-blur': 0.65,
-          'circle-opacity': 1
+          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 23, 25, 29, 50, 35],
+          'circle-blur': 0.3,
+          'circle-opacity': 1,
+          'circle-emissive-strength': 1
         }
       });
       map.addLayer({
@@ -2807,8 +2808,9 @@
         filter: ['has', 'point_count'],
         paint: {
           'circle-color': ['step', ['get', 'point_count'], '#00F5FF', 10, '#39FF14', 25, '#FFE600', 50, '#FF5A00'],
-          'circle-radius': ['step', ['get', 'point_count'], 21, 10, 26, 25, 32, 50, 39],
+          'circle-radius': ['step', ['get', 'point_count'], 12, 10, 15, 25, 18, 50, 21],
           'circle-opacity': 1,
+          'circle-emissive-strength': 1,
           'circle-stroke-width': 3,
           'circle-stroke-color': '#FFFFFF'
         }
@@ -2832,9 +2834,10 @@
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': ['get', 'color'],
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 16, 14, 25, 18, 36],
-          'circle-blur': 0.65,
-          'circle-opacity': 1
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 12, 18, 17],
+          'circle-blur': 0.3,
+          'circle-opacity': 1,
+          'circle-emissive-strength': 1
         }
       });
       map.addLayer({
@@ -2846,6 +2849,7 @@
           'circle-color': ['get', 'color'],
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 6, 14, 9, 18, 13],
           'circle-opacity': 1,
+          'circle-emissive-strength': 1,
           'circle-stroke-width': 3,
           'circle-stroke-color': '#FFFFFF'
         }
