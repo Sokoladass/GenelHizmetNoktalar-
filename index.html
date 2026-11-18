@@ -2625,6 +2625,7 @@
     ];
 
     let map = null;
+    let mapReady = false;
     let currentActivePopup = null;
     let disabledCategories = new Set();
     let isRotating = false;
@@ -2681,6 +2682,7 @@
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
 
       map.on('load', () => {
+        mapReady = true;
         try {
           map.setConfigProperty('basemap', 'lightPreset', 'dusk');
         } catch(e) {
@@ -2760,7 +2762,7 @@
 
     // PINLERİ ÇİZME (Çift tetikleme olmadan doğrudan tıklandığında açılır)
     function renderMarkers() {
-      if (!map || !map.isStyleLoaded()) return;
+      if (!map || !mapReady) return;
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       const features = allPoints
         .map((p, idx) => ({ p, idx }))
