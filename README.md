@@ -12,10 +12,11 @@ Başakşehir'deki kamu ve sosyal hizmet noktalarını Mapbox Standard 3D haritas
 ## Dosyalar
 
 - `index.html` — uygulama arayüzü, harita mantığı ve gömülü nokta verileri
+- `basaksehir-boundary.geojson` — neon ilçe sınırı çizgisi (OpenStreetMap relation 1766099)
 - `.nojekyll` — GitHub Pages'in statik dosyaları doğrudan sunması için
 - `.gitattributes` — Git dosya biçimi ayarları
 
-Noktalar `index.html` içinde tutulur. Harita performansı için her nokta ayrı HTML işaretçisi yerine Mapbox kaynak ve katmanlarıyla çizilir. İndirilen JSON düzenleme/yedekleme içindir; uygulama çalışırken bu dosyayı okumaz.
+Noktalar `index.html` içinde tutulur. Harita performansı için her nokta ayrı HTML işaretçisi yerine Mapbox kaynak ve katmanlarıyla çizilir. İlçe sınırı OpenStreetMap verisinden alınmıştır ve hukuki/imar amaçlı resmî sınır verisi değildir. İndirilen JSON düzenleme/yedekleme içindir; uygulama çalışırken bu dosyayı okumaz.
 
 ## Çalıştırma
 

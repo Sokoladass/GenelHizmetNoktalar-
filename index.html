@@ -20,6 +20,7 @@
     #app { display:flex; width:100vw; height:100vh; position:relative; }
     #map { flex:1; height:100%; width:100%; cursor:default; }
     #map.pick-crosshair { cursor:crosshair !important; }
+    #boundary-credit { position:absolute; right:76px; bottom:12px; z-index:5; padding:6px 10px; border:1px solid rgba(0,245,255,0.45); border-radius:8px; background:rgba(8,15,30,0.82); color:#b8faff; font-size:0.65rem; box-shadow:0 0 12px rgba(0,245,255,0.35); pointer-events:none; }
 
     /* Glassmorphism Sidebar */
     #sidebar {
@@ -501,6 +502,7 @@
 <body>
   <div id="app">
     <div id="map"></div>
+    <div id="boundary-credit">Neon ilçe sınırı · © OpenStreetMap contributors</div>
 
     <div id="token-modal">
       <div class="token-box">
@@ -2786,6 +2788,25 @@
         cluster: true,
         clusterMaxZoom: 14,
         clusterRadius: 48
+      });
+      map.addSource('basaksehir-boundary', { type: 'geojson', data: './basaksehir-boundary.geojson' });
+      map.addLayer({
+        id: 'boundary-neon-outer',
+        type: 'line',
+        source: 'basaksehir-boundary',
+        paint: { 'line-color': '#00F5FF', 'line-width': 18, 'line-blur': 7, 'line-opacity': 0.55, 'line-emissive-strength': 1 }
+      });
+      map.addLayer({
+        id: 'boundary-neon-inner',
+        type: 'line',
+        source: 'basaksehir-boundary',
+        paint: { 'line-color': '#00F5FF', 'line-width': 8, 'line-blur': 2.5, 'line-opacity': 0.9, 'line-emissive-strength': 1 }
+      });
+      map.addLayer({
+        id: 'boundary-neon-core',
+        type: 'line',
+        source: 'basaksehir-boundary',
+        paint: { 'line-color': '#E8FFFF', 'line-width': 2.5, 'line-opacity': 1, 'line-emissive-strength': 1 }
       });
 
       map.addLayer({
