@@ -332,20 +332,6 @@
     }
     .hud-btn:hover { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border-color: #38bdf8; transform: scale(1.05); }
 
-    /* 3D Pin Marker */
-    .marker-pin-3d {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 16px currentColor, 0 4px 12px rgba(0,0,0,0.7);
-      cursor: pointer !important;
-      pointer-events: auto !important;
-      display: block;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .marker-pin-3d:hover { transform: scale(1.4) translateY(-3px); }
-
     /* Mapbox Popup Styling */
     .mapboxgl-popup { z-index: 100 !important; }
     .mapboxgl-popup-content {
@@ -2639,11 +2625,9 @@
     ];
 
     let map = null;
-    let markerInstances = [];
     let currentActivePopup = null;
     let disabledCategories = new Set();
     let isRotating = false;
-    let rotationReq = null;
     let activeEditingIdx = null;
     let isCrosshairPicking = false;
 
@@ -2688,10 +2672,10 @@
         container: 'map',
         style: 'mapbox://styles/mapbox/standard',
         center: [28.775, 41.105],
-        zoom: 13.2,
-        pitch: 62,
+        zoom: 12.8,
+        pitch: 50,
         bearing: -18,
-        maxPitch: 85
+        maxPitch: 75
       });
 
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right');
@@ -2776,34 +2760,90 @@
 
     // PINLERİ ÇİZME (Çift tetikleme olmadan doğrudan tıklandığında açılır)
     function renderMarkers() {
-      if (!map) return;
-      markerInstances.forEach(m => m.remove());
-      markerInstances = [];
+      if (!map || !map.isStyleLoaded()) return;
       const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const features = allPoints
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p }) => !disabledCategories.has(p.cat) && (!query || p.name.toLowerCase().includes(query) || p.mah.toLowerCase().includes(query)))
+        .map(({ p, idx }) => ({
+          type: 'Feature',
+          id: idx,
+          geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+          properties: { idx, color: categoryColors[p.cat] || '#38bdf8' }
+        }));
 
-      allPoints.forEach((p, idx) => {
-        if (disabledCategories.has(p.cat)) return;
-        if (query && !p.name.toLowerCase().includes(query) && !p.mah.toLowerCase().includes(query)) return;
+      const source = map.getSource('locations');
+      if (source) {
+        source.setData({ type: 'FeatureCollection', features });
+        return;
+      }
 
-        const color = categoryColors[p.cat] || "#38bdf8";
+      map.addSource('locations', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features },
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 48
+      });
 
-        const el = document.createElement('div');
-        el.className = 'marker-pin-3d';
-        el.style.backgroundColor = color;
-        el.style.color = color;
+      map.addLayer({
+        id: 'location-clusters',
+        type: 'circle',
+        source: 'locations',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': ['step', ['get', 'point_count'], '#38bdf8', 10, '#22c55e', 25, '#f59e0b', 50, '#f97316'],
+          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 22, 25, 28, 50, 34],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+      map.addLayer({
+        id: 'location-cluster-count',
+        type: 'symbol',
+        source: 'locations',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        },
+        paint: { 'text-color': '#ffffff', 'text-halo-color': '#0f172a', 'text-halo-width': 1.25 }
+      });
+      map.addLayer({
+        id: 'location-points',
+        type: 'circle',
+        source: 'locations',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7, 18, 11],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
 
-        // Tıklama Dinleyicisi (Doğrudan popup'ı açar ve kamerayı odaklar)
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          flyTo3D(p.lng, p.lat, 16.8, 65);
-          openPopupForIndex(idx);
+      map.on('mouseenter', 'location-clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'location-clusters', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'location-points', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'location-points', () => { map.getCanvas().style.cursor = ''; });
+      map.on('click', 'location-clusters', (event) => {
+        const cluster = event.features?.[0];
+        if (!cluster) return;
+        const clusterSource = map.getSource('locations');
+        clusterSource.getClusterExpansionZoom(cluster.properties.cluster_id, (error, zoom) => {
+          if (error || zoom === undefined || zoom === null) return;
+          map.easeTo({ center: cluster.geometry.coordinates, zoom: Math.min(zoom + 0.4, 17), duration: 400 });
         });
-
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([p.lng, p.lat])
-          .addTo(map);
-
-        markerInstances.push(marker);
+      });
+      map.on('click', 'location-points', (event) => {
+        const feature = event.features?.[0];
+        if (!feature) return;
+        const idx = Number(feature.properties.idx);
+        const point = allPoints[idx];
+        if (!point) return;
+        flyTo3D(point.lng, point.lat, 16.8, 55);
+        openPopupForIndex(idx);
       });
     }
 
@@ -2888,10 +2928,9 @@
       map.flyTo({
         center: [lng, lat],
         zoom: zoom,
-        pitch: pitch,
-        bearing: Math.floor(Math.random() * 60) - 30,
-        speed: 1.2,
-        curve: 1.4,
+        pitch: Math.min(pitch, 55),
+        bearing: map.getBearing(),
+        duration: 850,
         essential: true
       });
     }
@@ -2966,13 +3005,13 @@
     function togglePerspective() {
       if (!map) return;
       const pitch = map.getPitch();
-      map.easeTo({ pitch: pitch > 20 ? 0 : 65, duration: 1000 });
+      map.easeTo({ pitch: pitch > 20 ? 0 : 55, duration: 700 });
     }
 
     function resetToBasaksehir() {
       if (!map) return;
       stopRotation();
-      map.flyTo({ center: [28.775, 41.105], zoom: 13, pitch: 62, bearing: -18, speed: 1.2 });
+      map.flyTo({ center: [28.775, 41.105], zoom: 12.8, pitch: 50, bearing: -18, duration: 850, essential: true });
     }
 
     function rotateCamera() {
@@ -2982,20 +3021,23 @@
       } else {
         isRotating = true;
         document.getElementById('orbit-icon').classList.add('fa-spin');
+        map.on('moveend', animateOrbit);
         animateOrbit();
       }
     }
 
     function animateOrbit() {
       if (!isRotating || !map) return;
-      map.setBearing(map.getBearing() + 0.2);
-      rotationReq = requestAnimationFrame(animateOrbit);
+      map.easeTo({ bearing: map.getBearing() + 360, duration: 60000, easing: t => t, essential: true });
     }
 
     function stopRotation() {
       isRotating = false;
       document.getElementById('orbit-icon').classList.remove('fa-spin');
-      if (rotationReq) cancelAnimationFrame(rotationReq);
+      if (map) {
+        map.off('moveend', animateOrbit);
+        map.stop();
+      }
     }
 
     function switchTab(t) {
