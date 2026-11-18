@@ -40,6 +40,7 @@
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
       overflow: hidden;
     }
+    #sidebar.is-hidden { display: none; }
     #sidebar-header {
       padding: 16px 20px 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -517,6 +518,8 @@
       <button class="hud-btn" onclick="togglePerspective()" title="3D / 2D Perspektif Değiştir"><i class="fa-solid fa-cube"></i></button>
       <button class="hud-btn" onclick="rotateCamera()" title="Şehir Çevresinde Tur"><i id="orbit-icon" class="fa-solid fa-arrows-rotate"></i></button>
       <button class="hud-btn" onclick="resetToBasaksehir()" title="Merkeze Dön"><i class="fa-solid fa-location-crosshairs"></i></button>
+      <button id="sidebar-toggle" class="hud-btn" onclick="toggleSidebar()" title="Paneli gizle" aria-label="Paneli gizle" aria-pressed="false"><i id="sidebar-toggle-icon" class="fa-solid fa-eye-slash"></i></button>
+      <button id="fullscreen-toggle" class="hud-btn" onclick="toggleFullscreen()" title="Tam ekran" aria-label="Tam ekran"><i class="fa-solid fa-expand"></i></button>
     </div>
 
     <div id="sidebar">
@@ -2644,6 +2647,36 @@
         document.getElementById('sidebar').classList.toggle('expanded');
       }
     }
+
+    function toggleSidebar() {
+      const hidden = document.getElementById('sidebar').classList.toggle('is-hidden');
+      const button = document.getElementById('sidebar-toggle');
+      document.getElementById('sidebar-toggle-icon').className = hidden ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+      button.title = hidden ? 'Paneli göster' : 'Paneli gizle';
+      button.setAttribute('aria-label', button.title);
+      button.setAttribute('aria-pressed', String(hidden));
+    }
+
+    async function toggleFullscreen() {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          await document.getElementById('app').requestFullscreen();
+        }
+      } catch (error) {
+        console.warn('Tam ekran açılamadı.', error);
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const active = Boolean(document.fullscreenElement);
+      const button = document.getElementById('fullscreen-toggle');
+      button.innerHTML = `<i class="fa-solid ${active ? 'fa-compress' : 'fa-expand'}"></i>`;
+      button.title = active ? 'Tam ekrandan çık' : 'Tam ekran';
+      button.setAttribute('aria-label', button.title);
+      if (map) map.resize();
+    });
 
     document.getElementById('search-input').addEventListener('focus', () => {
       if (window.innerWidth <= 768) {
