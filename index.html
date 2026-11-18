@@ -2670,11 +2670,17 @@
 
     function fitDistrictBoundary(duration = 0) {
       if (!map) return;
+      const restoreView = () => {
+        map.setBearing(-18);
+        map.setPitch(50);
+      };
+      if (duration > 0) map.once('moveend', restoreView);
       map.fitBounds([[28.6395951, 41.0578521], [28.8506049, 41.1494396]], {
         padding: { top: 72, bottom: 72, left: window.innerWidth > 768 ? 430 : 24, right: 84 },
         maxZoom: 12,
         duration
       });
+      if (duration === 0) restoreView();
     }
 
     function initMapbox(token) {
